@@ -281,25 +281,42 @@ app.delete('/events/:id', authMiddleware, async (req: Request, res: Response) =>
 });
 
 
-// Register for a symposium
+// Request registration for a symposium
 app.post('/symposiums/:id/registration', authMiddleware, async (req: Request, res: Response) => {
     const { id } = req.params;
     const userId = req.user.id;
 
     try {
-        const registration = await prisma.registration.create({
-            data: {
+        // Check if the user is already registered for this symposium
+        const existingRegistration = await prisma.registration.findFirst({
+            where: {
                 userId,
                 symposiumId: id,
             },
         });
-        res.status(201).json(registration);
+
+        if (existingRegistration) {
+            return res.status(400).json({ message: 'You are already registered for this symposium.' });
+        }
+
+        // Create the registration request
+        const registration = await prisma.registration.create({
+            data: {
+                userId,
+                symposiumId: id,
+                status: 'pending', // Set the registration status to pending
+            },
+        });
+
+        res.status(201).json({ message: 'Registration request sent successfully.', registration });
     } catch (error) {
-        res.status(500).json({ message: 'Error registering for symposium.' });
+        res.status(500).json({ message: 'Error requesting registration for symposium.' });
     }
 });
 
-// Register for an event
+
+
+// Request registration for an event
 app.post('/events/:id/registration', authMiddleware, async (req: Request, res: Response) => {
     const { id } = req.params;
     const userId = req.user.id;
@@ -315,31 +332,200 @@ app.post('/events/:id/registration', authMiddleware, async (req: Request, res: R
             return res.status(404).json({ message: 'Event not found' });
         }
 
-        // Check if the user is registered for the symposium of the event
-        const userRegistration = await prisma.registration.findFirst({
+        // Check if the user is already registered for this event
+        const existingRegistration = await prisma.registration.findFirst({
             where: {
-                userId: userId,
-                symposiumId: event.symposiumId,
-            },
-        });
-
-        if (!userRegistration) {
-            return res.status(403).json({ message: 'You must be registered for the symposium to register for this event.' });
-        }
-
-        // Create registration for the event
-        const registration = await prisma.registration.create({
-            data: {
                 userId,
                 eventId: id,
             },
         });
 
-        res.status(201).json(registration);
+        if (existingRegistration) {
+            return res.status(400).json({ message: 'You are already registered for this event.' });
+        }
+
+        // Check if the user is registered for the symposium of the event
+        const userRegistration = await prisma.registration.findFirst({
+            where: {
+                userId: userId,
+                symposiumId: event.symposiumId,
+                status: 'accepted', // Ensure the user is accepted in the symposium
+            },
+        });
+
+        if (!userRegistration) {
+            return res.status(403).json({ message: 'You must be accepted in the symposium to request registration for this event.' });
+        }
+
+        // Create registration request for the event
+        const registration = await prisma.registration.create({
+            data: {
+                userId,
+                eventId: id,
+                status: 'pending', // Set the registration status to pending
+            },
+        });
+
+        res.status(201).json({ message: 'Registration request sent successfully.', registration });
     } catch (error) {
-        res.status(500).json({ message: 'Error registering for event.' });
+        res.status(500).json({ message: 'Error requesting registration for event.' });
     }
 });
+
+
+app.get('/registrations/pending', authMiddleware, checkOrganizer, async (req: Request, res: Response) => {
+    const organizerId = req.user.id;
+
+    try {
+        // Find all symposiums organized by this organizer
+        const symposiums = await prisma.symposium.findMany({
+            where: { organizerId },
+            include: {
+                registrations: {
+                    where: { status: 'pending' }, // Only include pending registrations
+                    include: { user: true, symposium: true, event: true },
+                },
+            },
+        });
+
+        // Aggregate all pending registrations from these symposiums
+        const pendingRegistrations = symposiums.flatMap(s => s.registrations);
+
+        res.json(pendingRegistrations);
+    } catch (error) {
+        res.status(500).json({ message: 'Error retrieving pending registrations.' });
+    }
+});
+
+// Approve or reject a symposium registration
+app.put('/symposiums/:symposiumId/registrations/:registrationId', authMiddleware, checkOrganizer, async (req: Request, res: Response) => {
+    const { symposiumId, registrationId } = req.params;
+    const { status } = req.body; // "accepted" or "rejected"
+
+    if (!['accepted', 'rejected'].includes(status)) {
+        return res.status(400).json({ message: 'Invalid status.' });
+    }
+
+    try {
+        // Ensure the organizer is approving a registration for their own symposium
+        const symposium = await prisma.symposium.findUnique({
+            where: { id: symposiumId },
+        });
+
+        if (!symposium || symposium.organizerId !== req.user.id) {
+            return res.status(403).json({ message: 'Access denied. Only the organizer can approve/reject this registration.' });
+        }
+
+        // Ensure the registration belongs to the symposium
+        const registration = await prisma.registration.findUnique({
+            where: { id: registrationId },
+        });
+
+        if (!registration || registration.symposiumId !== symposiumId) {
+            return res.status(404).json({ message: 'Registration not found for this symposium.' });
+        }
+
+        // Update the registration status
+        const updatedRegistration = await prisma.registration.update({
+            where: { id: registrationId },
+            data: { status },
+        });
+
+        // If the registration is accepted, associate the user with the symposium
+        if (status === 'accepted') {
+            await prisma.user.update({
+                where: { id: updatedRegistration.userId },
+                data: {
+                    symposiums: {
+                        connect: { id: symposiumId },
+                    },
+                },
+            });
+        }
+
+        res.json({ message: `Registration ${status} successfully.`, registration: updatedRegistration });
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating registration status.' });
+    }
+});
+
+
+
+// Approve or reject an event registration
+app.put('/events/:eventId/registrations/:registrationId', authMiddleware, checkOrganizer, async (req: Request, res: Response) => {
+    const { eventId, registrationId } = req.params;
+    const { status } = req.body; // "accepted" or "rejected"
+
+    if (!['accepted', 'rejected'].includes(status)) {
+        return res.status(400).json({ message: 'Invalid status.' });
+    }
+
+    try {
+        // Ensure the organizer is approving a registration for their own event
+        const event = await prisma.event.findUnique({
+            where: { id: eventId },
+            include: { symposium: true },
+        });
+
+        if (!event || event.symposium.organizerId !== req.user.id) {
+            return res.status(403).json({ message: 'Access denied. Only the organizer can approve/reject this registration.' });
+        }
+
+        // Ensure the registration belongs to the event
+        const registration = await prisma.registration.findUnique({
+            where: { id: registrationId },
+        });
+
+        if (!registration || registration.eventId !== eventId) {
+            return res.status(404).json({ message: 'Registration not found for this event.' });
+        }
+
+        // Update the registration status
+        const updatedRegistration = await prisma.registration.update({
+            where: { id: registrationId },
+            data: { status },
+        });
+
+        // If the registration is accepted, associate the user with the event
+        if (status === 'accepted') {
+            await prisma.user.update({
+                where: { id: updatedRegistration.userId },
+                data: {
+                    events: {
+                        connect: { id: eventId },
+                    },
+                },
+            });
+        }
+
+        res.json({ message: `Registration ${status} successfully.`, registration: updatedRegistration });
+    } catch (error) {
+        res.status(500).json({ message: 'Error updating registration status.' });
+    }
+});
+
+
+
+// List all events for a specific symposium
+app.get('/symposiums/:id/events', async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    try {
+        // Find all events where the symposiumId matches the provided id
+        const events = await prisma.event.findMany({
+            where: { symposiumId: id },
+        });
+
+        if (events.length === 0) {
+            return res.status(404).json({ message: 'No events found for this symposium.' });
+        }
+
+        res.json(events);
+    } catch (error) {
+        res.status(500).json({ message: 'Error retrieving events for symposium.' });
+    }
+});
+
 
 
 // Get symposiums the user is registered for
@@ -378,6 +564,63 @@ app.get('/my-events', authMiddleware, async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error retrieving registered events.' });
     }
 });
+
+// List all participants in a symposium
+app.get('/symposiums/:id/participants', authMiddleware, checkOrganizer, async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    try {
+        // Verify the symposium exists and belongs to the organizer
+        const symposium = await prisma.symposium.findUnique({
+            where: { id },
+            include: {
+                registrations: {
+                    where: { status: 'accepted' },
+                    include: { user: true },
+                },
+            },
+        });
+
+        if (!symposium) {
+            return res.status(404).json({ message: 'Symposium not found.' });
+        }
+
+        const participants = symposium.registrations.map(registration => registration.user);
+
+        res.json(participants);
+    } catch (error) {
+        res.status(500).json({ message: 'Error retrieving participants for symposium.' });
+    }
+});
+
+// List all participants in a symposium event
+app.get('/events/:id/participants', authMiddleware, checkOrganizer, async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    try {
+        // Verify the event exists and belongs to the symposium organized by the user
+        const event = await prisma.event.findUnique({
+            where: { id },
+            include: {
+                registrations: {
+                    where: { status: 'accepted' },
+                    include: { user: true },
+                },
+            },
+        });
+
+        if (!event) {
+            return res.status(404).json({ message: 'Event not found.' });
+        }
+
+        const participants = event.registrations.map(registration => registration.user);
+
+        res.json(participants);
+    } catch (error) {
+        res.status(500).json({ message: 'Error retrieving participants for event.' });
+    }
+});
+
 
 // Get a specific certificate
 app.get('/certificates/:id', authMiddleware, async (req: Request, res: Response) => {

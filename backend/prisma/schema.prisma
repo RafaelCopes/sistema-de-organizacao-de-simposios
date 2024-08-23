@@ -8,14 +8,16 @@ datasource db {
 }
 
 model Registration {
-  id          String     @id @default(uuid())
-  user        User       @relation(fields: [userId], references: [id])
-  userId      String
-  symposium   Symposium? @relation(fields: [symposiumId], references: [id])
-  symposiumId String?
-  event       Event?     @relation(fields: [eventId], references: [id])
-  eventId     String?
-  createdAt   DateTime   @default(now())
+  id           String     @id @default(uuid())
+  userId       String
+  symposiumId  String?
+  eventId      String?
+  status       String     @default("pending") // "pending", "accepted", "rejected"
+  createdAt    DateTime   @default(now())
+
+  user         User       @relation(fields: [userId], references: [id])
+  symposium    Symposium? @relation(fields: [symposiumId], references: [id])
+  event        Event?     @relation(fields: [eventId], references: [id])
 }
 
 model Certificate {
