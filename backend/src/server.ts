@@ -7,6 +7,7 @@ import { Request, Response } from 'express';
 const app = express();
 const prisma = new PrismaClient();
 const SECRET = 'supersecretkey';
+const PORT = 3000;
 
 app.use(express.json());
 
@@ -24,6 +25,14 @@ const authMiddleware = (req: Request, res: Response, next: Function) => {
     } catch (err) {
         return res.status(401).json({ message: 'Invalid token' });
     }
+};
+
+// Check if it is organizer
+const checkOrganizer = (req: Request, res: Response, next: Function) => {
+    if (req.user.type !== 'organizer') {
+        return res.status(403).json({ message: 'Access denied. Only organizers can perform this action.' });
+    }
+    next();
 };
 
 // Simple error handling
@@ -51,6 +60,7 @@ app.post('/login', async (req: Request, res: Response) => {
     res.json({ token });
 });
 
+// List users
 app.get('/users', async (req: Request, res: Response) => {
     try {
         const users = await prisma.user.findMany({
@@ -68,7 +78,6 @@ app.get('/users', async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Error retrieving users.' });
     }
 });
-
 
 // Create a user
 app.post('/users', async (req: Request, res: Response) => {
@@ -109,7 +118,7 @@ app.get('/symposiums/:id', async (req: Request, res: Response) => {
 });
 
 // Create a symposium
-app.post('/symposiums', authMiddleware, async (req: Request, res: Response) => {
+app.post('/symposiums', authMiddleware, checkOrganizer, async (req: Request, res: Response) => {
     const { name, description, startDate, endDate, location, organizerId } = req.body;
 
     try {
@@ -126,53 +135,62 @@ app.post('/symposiums', authMiddleware, async (req: Request, res: Response) => {
 app.put('/symposiums/:id', authMiddleware, async (req: Request, res: Response) => {
     const { id } = req.params;
     const { name, description, startDate, endDate, location } = req.body;
+    const userId = req.user.id;
 
     try {
-        const symposium = await prisma.symposium.update({
+        // Verify the symposium exists and the user is the organizer
+        const symposium = await prisma.symposium.findUnique({
+            where: { id },
+        });
+
+        if (!symposium) {
+            return res.status(404).json({ message: 'Symposium not found' });
+        }
+
+        if (symposium.organizerId !== userId) {
+            return res.status(403).json({ message: 'Access denied. Only the organizer can update this symposium.' });
+        }
+
+        const updatedSymposium = await prisma.symposium.update({
             where: { id },
             data: { name, description, startDate: new Date(startDate), endDate: new Date(endDate), location },
         });
-        res.json(symposium);
+        res.json(updatedSymposium);
     } catch (error) {
-        res.status(404).json({ message: 'Symposium not found' });
+        res.status(500).json({ message: 'Error updating symposium.' });
     }
 });
 
 // Delete a symposium
 app.delete('/symposiums/:id', authMiddleware, async (req: Request, res: Response) => {
     const { id } = req.params;
+    const userId = req.user.id;
 
     try {
+        // Verify the symposium exists and the user is the organizer
+        const symposium = await prisma.symposium.findUnique({
+            where: { id },
+        });
+
+        if (!symposium) {
+            return res.status(404).json({ message: 'Symposium not found' });
+        }
+
+        if (symposium.organizerId !== userId) {
+            return res.status(403).json({ message: 'Access denied. Only the organizer can delete this symposium.' });
+        }
+
         await prisma.symposium.delete({
             where: { id },
         });
         res.status(204).send();
     } catch (error) {
-        res.status(404).json({ message: 'Symposium not found' });
+        res.status(500).json({ message: 'Error deleting symposium.' });
     }
-});
-
-// Get all events
-app.get('/events', async (req: Request, res: Response) => {
-    const events = await prisma.event.findMany();
-    res.json(events);
-});
-
-// Get a specific event
-app.get('/events/:id', async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const event = await prisma.event.findUnique({
-        where: { id },
-    });
-
-    if (!event) {
-        return res.status(404).json({ message: 'Event not found' });
-    }
-    res.json(event);
 });
 
 // Create an event
-app.post('/events', authMiddleware, async (req: Request, res: Response) => {
+app.post('/events', authMiddleware, checkOrganizer, async (req: Request, res: Response) => {
     const { name, description, date, startTime, endTime, capacity, level, symposiumId } = req.body;
 
     try {
@@ -198,9 +216,24 @@ app.post('/events', authMiddleware, async (req: Request, res: Response) => {
 app.put('/events/:id', authMiddleware, async (req: Request, res: Response) => {
     const { id } = req.params;
     const { name, description, date, startTime, endTime, capacity, level } = req.body;
+    const userId = req.user.id;
 
     try {
-        const event = await prisma.event.update({
+        // Verify the event exists and the user is the organizer of the symposium
+        const event = await prisma.event.findUnique({
+            where: { id },
+            include: { symposium: true },
+        });
+
+        if (!event) {
+            return res.status(404).json({ message: 'Event not found' });
+        }
+
+        if (event.symposium.organizerId !== userId) {
+            return res.status(403).json({ message: 'Access denied. Only the organizer of the symposium can update this event.' });
+        }
+
+        const updatedEvent = await prisma.event.update({
             where: { id },
             data: {
                 name,
@@ -212,25 +245,41 @@ app.put('/events/:id', authMiddleware, async (req: Request, res: Response) => {
                 level,
             },
         });
-        res.json(event);
+        res.json(updatedEvent);
     } catch (error) {
-        res.status(404).json({ message: 'Event not found' });
+        res.status(500).json({ message: 'Error updating event.' });
     }
 });
 
 // Delete an event
 app.delete('/events/:id', authMiddleware, async (req: Request, res: Response) => {
     const { id } = req.params;
+    const userId = req.user.id;
 
     try {
+        // Verify the event exists and the user is the organizer of the symposium
+        const event = await prisma.event.findUnique({
+            where: { id },
+            include: { symposium: true },
+        });
+
+        if (!event) {
+            return res.status(404).json({ message: 'Event not found' });
+        }
+
+        if (event.symposium.organizerId !== userId) {
+            return res.status(403).json({ message: 'Access denied. Only the organizer of the symposium can delete this event.' });
+        }
+
         await prisma.event.delete({
             where: { id },
         });
         res.status(204).send();
     } catch (error) {
-        res.status(404).json({ message: 'Event not found' });
+        res.status(500).json({ message: 'Error deleting event.' });
     }
 });
+
 
 // Register for a symposium
 app.post('/symposiums/:id/registration', authMiddleware, async (req: Request, res: Response) => {
@@ -256,17 +305,17 @@ app.post('/events/:id/registration', authMiddleware, async (req: Request, res: R
     const userId = req.user.id;
 
     try {
-        // Verificar se o evento existe
+        // Verify the event exists
         const event = await prisma.event.findUnique({
             where: { id },
-            include: { symposium: true }, // Incluir o simpósio relacionado
+            include: { symposium: true }, // Include the related symposium
         });
 
         if (!event) {
             return res.status(404).json({ message: 'Event not found' });
         }
 
-        // Verificar se o usuário está inscrito no simpósio do evento
+        // Check if the user is registered for the symposium of the event
         const userRegistration = await prisma.registration.findFirst({
             where: {
                 userId: userId,
@@ -278,7 +327,7 @@ app.post('/events/:id/registration', authMiddleware, async (req: Request, res: R
             return res.status(403).json({ message: 'You must be registered for the symposium to register for this event.' });
         }
 
-        // Criar registro para o evento
+        // Create registration for the event
         const registration = await prisma.registration.create({
             data: {
                 userId,
@@ -293,24 +342,41 @@ app.post('/events/:id/registration', authMiddleware, async (req: Request, res: R
 });
 
 
-// Get registered symposiums
+// Get symposiums the user is registered for
 app.get('/my-symposiums', authMiddleware, async (req: Request, res: Response) => {
     const userId = req.user.id;
-    const symposiums = await prisma.registration.findMany({
-        where: { userId },
-        include: { symposium: true },
-    });
-    res.json(symposiums);
+
+    try {
+        const registrations = await prisma.registration.findMany({
+            where: { userId, symposiumId: { not: null } },
+            include: { symposium: true },
+        });
+
+        const symposiums = registrations.map(registration => registration.symposium);
+
+        res.json(symposiums);
+    } catch (error) {
+        res.status(500).json({ message: 'Error retrieving registered symposiums.' });
+    }
 });
 
-// Get registered events
+
+// Get events the user is registered for
 app.get('/my-events', authMiddleware, async (req: Request, res: Response) => {
     const userId = req.user.id;
-    const events = await prisma.registration.findMany({
-        where: { userId },
-        include: { event: true },
-    });
-    res.json(events);
+
+    try {
+        const registrations = await prisma.registration.findMany({
+            where: { userId, eventId: { not: null } },
+            include: { event: true },
+        });
+
+        const events = registrations.map(registration => registration.event);
+
+        res.json(events);
+    } catch (error) {
+        res.status(500).json({ message: 'Error retrieving registered events.' });
+    }
 });
 
 // Get a specific certificate
@@ -359,6 +425,6 @@ app.get('/validate-certificate/:code', async (req: Request, res: Response) => {
     res.json(certificate);
 });
 
-app.listen(3000, () => {
-    console.log('Server running on port 3000');
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}...`);
 });
