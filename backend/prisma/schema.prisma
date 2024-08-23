@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Registration {
+  id          String     @id @default(uuid())
+  user        User       @relation(fields: [userId], references: [id])
+  userId      String
+  symposium   Symposium? @relation(fields: [symposiumId], references: [id])
+  symposiumId String?
+  event       Event?     @relation(fields: [eventId], references: [id])
+  eventId     String?
+  createdAt   DateTime   @default(now())
+}
+
+model Certificate {
+  id           String     @id @default(uuid())
+  code         String     @unique
+  user         User       @relation(fields: [userId], references: [id])
+  userId       String
+  symposium    Symposium? @relation(fields: [symposiumId], references: [id])
+  symposiumId  String?
+  issuanceDate DateTime   @default(now())
+}
+
+model User {
+  id           String         @id @default(uuid())
+  name         String
+  email        String         @unique
+  password     String
+  type         String
+  symposiums   Symposium[]
+  events       Event[]
+  registrations Registration[]
+  certificates Certificate[]
+}
+
+model Symposium {
+  id          String        @id @default(uuid())
+  name        String
+  description String
+  startDate   DateTime
+  endDate     DateTime
+  location    String
+  organizer   User          @relation(fields: [organizerId], references: [id])
+  organizerId String
+  events      Event[]
+  registrations Registration[]
+  certificates Certificate[]
+}
+
+model Event {
+  id           String        @id @default(uuid())
+  name         String
+  description  String
+  date         DateTime
+  startTime    DateTime
+  endTime      DateTime
+  capacity     Int
+  level        String
+  symposium    Symposium     @relation(fields: [symposiumId], references: [id])
+  symposiumId  String
+  participants User[]
+  registrations Registration[]
+}
