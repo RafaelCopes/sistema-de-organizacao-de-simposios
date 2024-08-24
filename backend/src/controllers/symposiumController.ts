@@ -28,7 +28,7 @@ export const getSymposiumById = async (req: Request, res: Response) => {
 };
 
 export const createSymposium = async (req: Request, res: Response) => {
-    const { name, description, startDate, endDate, location, organizerId } = req.body;
+    const { name, description, startDate, endDate, location } = req.body;
 
     try {
         const symposium = await prisma.symposium.create({
@@ -38,7 +38,7 @@ export const createSymposium = async (req: Request, res: Response) => {
                 startDate: new Date(startDate), 
                 endDate: new Date(endDate), 
                 location, 
-                organizerId 
+                organizerId: req.user.id,
             },
         });
         res.status(201).json(symposium);

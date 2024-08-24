@@ -121,7 +121,7 @@ export const approveOrRejectSymposiumRegistration = async (req: Request, res: Re
             data: { status },
         });
 
-        // Se o registro for aceito, associe o usuário ao simpósio
+        // Se o registro for aceito, associe o usuário ao simpósio sem alterar o organizerId
         if (status === 'accepted') {
             await prisma.user.update({
                 where: { id: updatedRegistration.userId },
@@ -173,7 +173,7 @@ export const approveOrRejectEventRegistration = async (req: Request, res: Respon
             data: { status },
         });
 
-        // Se o registro for aceito, associe o usuário ao evento
+        // Se o registro for aceito, associe o usuário ao evento sem alterar o organizerId
         if (status === 'accepted') {
             await prisma.user.update({
                 where: { id: updatedRegistration.userId },
