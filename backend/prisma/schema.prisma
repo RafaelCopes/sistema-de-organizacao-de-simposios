@@ -21,14 +21,18 @@ model Registration {
 }
 
 model Certificate {
-  id           String     @id @default(uuid())
-  code         String     @unique
-  user         User       @relation(fields: [userId], references: [id])
-  userId       String
-  symposium    Symposium? @relation(fields: [symposiumId], references: [id])
-  symposiumId  String?
-  issuanceDate DateTime   @default(now())
+    id            String   @id @default(uuid())
+    code          String   @unique
+    userId        String
+    user          User     @relation(fields: [userId], references: [id])
+    symposiumId   String
+    eventId       String
+    issuanceDate  DateTime
+    revoked       Boolean  @default(false)
+    Symposium     Symposium? @relation(fields: [symposiumId], references: [id])
+    Event         Event?     @relation(fields: [eventId], references: [id])
 }
+
 
 model User {
   id           String         @id @default(uuid())
@@ -69,4 +73,5 @@ model Event {
   symposiumId  String
   participants User[]
   registrations Registration[]
+  certificates Certificate[]
 }
