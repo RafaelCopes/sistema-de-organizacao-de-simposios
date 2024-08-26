@@ -2,11 +2,18 @@ import { Request, Response } from 'express';
 import prisma from '../../prismaClient';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { loginSchema } from '../zodSchemas';
 
 const SECRET = 'supersecretkey';
 
 export const login = async (req: Request, res: Response) => {
-    const { email, password } = req.body;
+    const parsedData = loginSchema.safeParse(req.body);
+
+    if (!parsedData.success) {
+        return res.status(400).json({ message: 'Invalid data', errors: parsedData.error.errors });
+    }
+
+    const { email, password } = parsedData.data;
 
     const user = await prisma.user.findUnique({
         where: { email },

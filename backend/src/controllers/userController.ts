@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../../prismaClient";
 import bcrypt from "bcrypt";
+import { createUserSchema } from '../zodSchemas';
 
 export const listUsers = async (req: Request, res: Response) => {
   try {
@@ -21,7 +22,14 @@ export const listUsers = async (req: Request, res: Response) => {
 };
 
 export const createUser = async (req: Request, res: Response) => {
-  const { name, email, password, type } = req.body;
+  const parsedData = createUserSchema.safeParse(req.body);
+
+  if (!parsedData.success) {
+    return res.status(400).json({ message: 'Invalid data', errors: parsedData.error.errors });
+  }
+
+  const { name, email, password, type } = parsedData.data;
+  
   const hashedPassword = await bcrypt.hash(password, 10);
 
   try {

@@ -1,8 +1,19 @@
 import { Request, Response } from 'express';
 import prisma from '../../prismaClient';
+import { 
+    idSchema,
+    approveOrRejectSymposiumRegistrationSchema,
+    approveOrRejectEventRegistrationSchema
+} from '../zodSchemas';
 
 export const requestSymposiumRegistration = async (req: Request, res: Response) => {
-    const { id } = req.params;  // ID do simpósio
+    const parsedParams = idSchema.safeParse(req.params);
+
+    if (!parsedParams.success) {
+        return res.status(400).json({ message: 'Invalid data', errors: parsedParams.error.errors });
+    }
+
+    const { id } = parsedParams.data;  // ID do simpósio
     const userId = req.user.id;
 
     try {
@@ -34,7 +45,13 @@ export const requestSymposiumRegistration = async (req: Request, res: Response) 
 };
 
 export const requestEventRegistration = async (req: Request, res: Response) => {
-    const { id } = req.params;  // ID do evento
+    const parsedParams = idSchema.safeParse(req.params);
+
+    if (!parsedParams.success) {
+        return res.status(400).json({ message: 'Invalid data', errors: parsedParams.error.errors });
+    }
+
+    const { id } = parsedParams.data;  // ID do evento
     const userId = req.user.id;
 
     try {
@@ -89,12 +106,19 @@ export const requestEventRegistration = async (req: Request, res: Response) => {
 };
 
 export const approveOrRejectSymposiumRegistration = async (req: Request, res: Response) => {
-    const { symposiumId, registrationId } = req.params;
-    const { status } = req.body;  // "accepted" ou "rejected"
+    const parsedParams = approveOrRejectSymposiumRegistrationSchema.safeParse(req.params);
+    const parsedBody = approveOrRejectSymposiumRegistrationSchema.safeParse(req.body);
 
-    if (!['accepted', 'rejected'].includes(status)) {
-        return res.status(400).json({ message: 'Status inválido.' });
+    if (!parsedParams.success) {
+        return res.status(400).json({ message: 'Invalid parameters', errors: parsedParams.error.errors });
     }
+
+    if (!parsedBody.success) {
+        return res.status(400).json({ message: 'Invalid body data', errors: parsedBody.error.errors });
+    }
+
+    const { symposiumId, registrationId } = parsedParams.data;
+    const { status } = parsedBody.data;  // "accepted" ou "rejected"
 
     try {
         // Certifique-se de que o organizador está aprovando um registro para o seu próprio simpósio
@@ -140,12 +164,19 @@ export const approveOrRejectSymposiumRegistration = async (req: Request, res: Re
 };
 
 export const approveOrRejectEventRegistration = async (req: Request, res: Response) => {
-    const { eventId, registrationId } = req.params;
-    const { status } = req.body;  // "accepted" ou "rejected"
+    const parsedParams = approveOrRejectEventRegistrationSchema.safeParse(req.params);
+    const parsedBody = approveOrRejectEventRegistrationSchema.safeParse(req.body);
 
-    if (!['accepted', 'rejected'].includes(status)) {
-        return res.status(400).json({ message: 'Status inválido.' });
+    if (!parsedParams.success) {
+        return res.status(400).json({ message: 'Invalid parameters', errors: parsedParams.error.errors });
     }
+
+    if (!parsedBody.success) {
+        return res.status(400).json({ message: 'Invalid body data', errors: parsedBody.error.errors });
+    }
+
+    const { eventId, registrationId } = parsedParams.data;
+    const { status } = parsedBody.data;  // "accepted" ou "rejected"
 
     try {
         // Certifique-se de que o organizador está aprovando um registro para o seu próprio evento

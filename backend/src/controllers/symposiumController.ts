@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../../prismaClient';
+import { createSymposiumSchema, updateSymposiumSchema, idSchema } from '../zodSchemas'; // Assuming you've created these schemas
 
 export const getAllSymposiums = async (req: Request, res: Response) => {
     try {
@@ -11,7 +12,13 @@ export const getAllSymposiums = async (req: Request, res: Response) => {
 };
 
 export const getSymposiumById = async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const parsedParams = idSchema.safeParse(req.params);
+
+    if (!parsedParams.success) {
+        return res.status(400).json({ message: 'Invalid symposium ID', errors: parsedParams.error.errors });
+    }
+
+    const { id } = parsedParams.data;
 
     try {
         const symposium = await prisma.symposium.findUnique({
@@ -28,7 +35,13 @@ export const getSymposiumById = async (req: Request, res: Response) => {
 };
 
 export const createSymposium = async (req: Request, res: Response) => {
-    const { name, description, startDate, endDate, location } = req.body;
+    const parsedBody = createSymposiumSchema.safeParse(req.body);
+
+    if (!parsedBody.success) {
+        return res.status(400).json({ message: 'Invalid symposium data', errors: parsedBody.error.errors });
+    }
+
+    const { name, description, startDate, endDate, location } = parsedBody.data;
 
     try {
         const symposium = await prisma.symposium.create({
@@ -48,8 +61,19 @@ export const createSymposium = async (req: Request, res: Response) => {
 };
 
 export const updateSymposium = async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { name, description, startDate, endDate, location } = req.body;
+    const parsedParams = idSchema.safeParse(req.params);
+    const parsedBody = updateSymposiumSchema.safeParse(req.body);
+
+    if (!parsedParams.success) {
+        return res.status(400).json({ message: 'Invalid parameters', errors: parsedParams.error.errors });
+    }
+
+    if (!parsedBody.success) {
+        return res.status(400).json({ message: 'Invalid body data', errors: parsedBody.error.errors });
+    }
+
+    const { id } = parsedParams.data;
+    const { name, description, startDate, endDate, location } = parsedBody.data;
     const userId = req.user.id;
 
     try {
@@ -70,8 +94,8 @@ export const updateSymposium = async (req: Request, res: Response) => {
             data: { 
                 name, 
                 description, 
-                startDate: new Date(startDate), 
-                endDate: new Date(endDate), 
+                startDate: startDate ? new Date(startDate) : undefined, 
+                endDate: endDate ? new Date(endDate) : undefined, 
                 location 
             },
         });
@@ -82,7 +106,13 @@ export const updateSymposium = async (req: Request, res: Response) => {
 };
 
 export const deleteSymposium = async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const parsedParams = idSchema.safeParse(req.params);
+
+    if (!parsedParams.success) {
+        return res.status(400).json({ message: 'Invalid symposium ID', errors: parsedParams.error.errors });
+    }
+
+    const { id } = parsedParams.data;
     const userId = req.user.id;
 
     try {
@@ -104,5 +134,23 @@ export const deleteSymposium = async (req: Request, res: Response) => {
         res.status(204).send();
     } catch (error) {
         res.status(500).json({ message: 'Error deleting symposium.' });
+    }
+};
+
+export const listUserSymposiums = async (req: Request, res: Response) => {
+    const userId = req.user.id;  // Assuming userId is available through authentication
+
+    try {
+        const symposiums = await prisma.symposium.findMany({
+            where: { organizerId: userId },
+        });
+
+        if (symposiums.length === 0) {
+            return res.status(404).json({ message: 'No symposiums found for this organizer.' });
+        }
+
+        res.json(symposiums);
+    } catch (error) {
+        res.status(500).json({ message: 'Error retrieving symposiums for organizer.' });
     }
 };
