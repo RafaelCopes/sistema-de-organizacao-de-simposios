@@ -157,3 +157,33 @@ export const deleteEvent = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error deleting event.' });
   }
 };
+
+
+export const getEventById = async (req: Request, res: Response) => {
+  const parsedData = idSchema.safeParse(req.params);
+
+  if (!parsedData.success) {
+    return res.status(400).json({ message: 'Invalid data', errors: parsedData.error.errors });
+  }
+
+  const { id } = parsedData.data;
+
+  try {
+    const event = await prisma.event.findUnique({
+      where: { id },
+      include: {
+        symposium: true, // Include related symposium details if needed
+        registrations: true, // Include related registrations if needed
+      },
+    });
+
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found.' });
+    }
+
+    res.json(event);
+  } catch (error) {
+    console.error('Error retrieving event:', error);
+    res.status(500).json({ message: 'Error retrieving event.' });
+  }
+};
