@@ -39,7 +39,7 @@ export function CreateEvent() {
   const onSubmit = async (data) => {
     try {
       await client.post('/events', { ...data, symposiumId: id }, { headers: { Authorization: `Bearer ${user.token}` } });
-      navigate('/');
+      navigate('/organizer/dash/' + id);
     } catch (error) {
       console.error('Error creating event:', error);
     }

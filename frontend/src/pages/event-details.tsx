@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   Button,
-  List,
   CircularProgress,
   Card,
   CardContent,
@@ -12,28 +11,25 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import { client } from "../config/client";
 
-export function SymposiumDetails() {
+export function EventDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [symposium, setSymposium] = useState(null);
-  const [events, setEvents] = useState([]);
+  const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchSymposiumDetails = async () => {
+    const fetchEventDetails = async () => {
       try {
-        const symposiumResponse = await client.get(`/symposiums/${id}`);
-        setSymposium(symposiumResponse.data);
-        const eventsResponse = await client.get(`/symposiums/${id}/events`);
-        setEvents(eventsResponse.data);
+        const response = await client.get(`/events/${id}`);
+        setEvent(response.data);
       } catch (error) {
-        console.error("Error fetching symposium details:", error);
+        console.error("Error fetching event details:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchSymposiumDetails();
+    fetchEventDetails();
   }, [id]);
 
   if (loading) {
@@ -121,7 +117,7 @@ export function SymposiumDetails() {
           overflowY: "auto",
         }}
       >
-        {symposium ? (
+        {event ? (
           <Box>
             <Box
               sx={{
@@ -134,7 +130,7 @@ export function SymposiumDetails() {
                 variant="h4"
                 sx={{ color: "#FFFFFF", marginBottom: "20px" }}
               >
-                {symposium.name}
+                {event.name}
               </Typography>
               <Button
                 variant="contained"
@@ -144,9 +140,9 @@ export function SymposiumDetails() {
                     backgroundColor: "#5C6BC0",
                   },
                 }}
-                onClick={() => navigate(`create-event`)}
+                onClick={() => navigate(`/events/edit/${id}`)}
               >
-                Criar Evento
+                Editar Evento
               </Button>
             </Box>
 
@@ -159,81 +155,43 @@ export function SymposiumDetails() {
               }}
             >
               <Typography variant="body1" sx={{ marginBottom: "10px" }}>
-                <strong>Local:</strong> {symposium.location}
+                <strong>Data:</strong>{" "}
+                {new Date(event.date).toLocaleDateString()}
               </Typography>
               <Typography variant="body1" sx={{ marginBottom: "10px" }}>
-                <strong>Data Começo:</strong>{" "}
-                {new Date(symposium.startDate).toLocaleDateString()}
+                <strong>Horário de Início:</strong>{" "}
+                {new Date(`${event.date}T${event.startTime}`).toLocaleTimeString()}
               </Typography>
               <Typography variant="body1" sx={{ marginBottom: "10px" }}>
-                <strong>Data Fim:</strong>{" "}
-                {new Date(symposium.endDate).toLocaleDateString()}
+                <strong>Horário de Término:</strong>{" "}
+                {new Date(`${event.date}T${event.endTime}`).toLocaleTimeString()}
               </Typography>
               <Typography variant="body1" sx={{ marginBottom: "10px" }}>
-                <strong>Organizador:</strong> {symposium.organizer.name}
+                <strong>Local:</strong> {event.location}
               </Typography>
               <Typography variant="body1" sx={{ marginBottom: "10px" }}>
-                <strong>Descrição:</strong> {symposium.description}
+                <strong>Nível:</strong> {event.level}
+              </Typography>
+              <Typography variant="body1" sx={{ marginBottom: "10px" }}>
+                <strong>Capacidade:</strong> {event.capacity}
+              </Typography>
+              <Typography variant="body1" sx={{ marginBottom: "10px" }}>
+                <strong>Descrição:</strong> {event.description}
               </Typography>
             </Card>
 
-            <Typography
-              variant="h5"
-              sx={{ color: "#FFFFFF", marginBottom: "20px" }}
+            <Button
+              variant="outlined"
+              color="secondary"
+              sx={{ color: "#FFFFFF", borderColor: "#616161" }}
+              onClick={() => navigate(-1)}
             >
-              Lista de todos os eventos do simpósio
-            </Typography>
-
-            {events.length === 0 ? (
-              <Typography sx={{ color: "#BBBBBB" }}>
-                Nenhum evento disponível.
-              </Typography>
-            ) : (
-              <List>
-                {events.map((event) => (
-                  <Card
-                    key={event.id}
-                    sx={{
-                      marginBottom: "20px",
-                      backgroundColor: "#3C3C3C",
-                      color: "#FFFFFF",
-                      padding: "15px",
-                      "&:hover": {
-                        backgroundColor: "#4A4A4A",
-                      },
-                    }}
-                  >
-                    <CardContent>
-                      <Typography variant="h6">{event.name}</Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: "#AAAAAA", marginBottom: "10px" }}
-                      >
-                        {new Date(event.date).toLocaleDateString()} -{" "}
-                        {event.level}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: "#AAAAAA" }}>
-                        {event.description}
-                      </Typography>
-                    </CardContent>
-                    <CardActions>
-                      <Button
-                        variant="outlined"
-                        color="primary"
-                        onClick={() => navigate(`/organizer/dash/events/${event.id}`)}
-                        sx={{ color: "#FFFFFF", borderColor: "#616161" }}
-                      >
-                        Mais Detalhes
-                      </Button>
-                    </CardActions>
-                  </Card>
-                ))}
-              </List>
-            )}
+              Voltar
+            </Button>
           </Box>
         ) : (
           <Typography sx={{ color: "#BBBBBB" }}>
-            Simpósio não encontrado.
+            Evento não encontrado.
           </Typography>
         )}
       </Box>
