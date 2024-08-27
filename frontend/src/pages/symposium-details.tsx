@@ -144,7 +144,7 @@ export function SymposiumDetails() {
                     backgroundColor: "#5C6BC0",
                   },
                 }}
-                onClick={() => navigate(`/create-event/${symposium.id}`)}
+                onClick={() => navigate(`create-event`)}
               >
                 Criar Evento
               </Button>
