@@ -38,7 +38,7 @@ export const Sidebar = () => {
               backgroundColor: "#5C6BC0",
             },
           }}
-          onClick={() => navigate("/create-symposium")}
+          onClick={() => navigate("create")}
         >
           Adicionar Simpósio
         </Button>
