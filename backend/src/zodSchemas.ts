@@ -33,12 +33,17 @@ export const updateSymposiumSchema = z.object({
     location: z.string().optional(),
 });
 
+const timeValidation = (time: string) => {
+    // Regex to match HH:MM format
+    return /^([01]\d|2[0-3]):?([0-5]\d)$/.test(time);
+  };
+
 export const createEventSchema = z.object({
     name: z.string().min(1, 'Name is required'),
     description: z.string(),
     date: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid date format'),
-    startTime: z.string().refine((time) => !isNaN(Date.parse(time)), 'Invalid time format'),
-    endTime: z.string().refine((time) => !isNaN(Date.parse(time)), 'Invalid time format'),
+    startTime: z.string().refine(timeValidation, 'Formato de hora inválido'),
+    endTime: z.string().refine(timeValidation, 'Formato de hora inválido'),
     capacity: z.number().int().positive('Capacity must be a positive integer'),
     level: z.enum(['beginner', 'intermediate', 'advanced']),
     symposiumId: z.string().uuid('Invalid UUID for symposiumId'),

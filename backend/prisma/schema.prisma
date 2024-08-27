@@ -77,8 +77,8 @@ model Event {
   name               String
   description        String
   date               DateTime
-  startTime          DateTime
-  endTime            DateTime
+  startTime          String
+  endTime            String
   capacity           Int
   level              String
   symposium          Symposium              @relation(fields: [symposiumId], references: [id])
