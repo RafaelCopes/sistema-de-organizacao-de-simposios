@@ -1,6 +1,6 @@
 import { RouteObject } from "react-router-dom";
 import { Symposiums } from "../pages/symposiums";
-import { SymposiumDetail } from "../pages/symposium-detail";
+import { SymposiumDetails } from "../pages/symposium-details";
 
 export const organizerRoutes: RouteObject[] = [
   {
@@ -8,12 +8,12 @@ export const organizerRoutes: RouteObject[] = [
     children: [
       {
         index: true,
-        element: <Symposiums/>,
+        element: <Symposiums />,
       },
       {
         path: ":id",
-        element: <SymposiumDetail/>,
-      }
+        element: <SymposiumDetails />,
+      },
     ],
   },
 ];
