@@ -1,22 +1,25 @@
-import { useState } from 'react';
 import { Box, Button, Typography, TextField } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { client } from '../config/client';
+import useAuthUser from 'react-auth-kit/hooks/useAuthUser';
+import { UserType } from '../types/userType';
 
 const symposiumSchema = z.object({
   name: z.string().min(1, "O nome é obrigatório."),
   location: z.string().min(1, "O local é obrigatório."),
   startDate: z.string().min(1, "A data de início é obrigatória."),
   endDate: z.string().min(1, "A data de término é obrigatória."),
-  organizerName: z.string().min(1, "O nome do organizador é obrigatório."),
   description: z.string().min(1, "A descrição é obrigatória."),
 });
 
 export function CreateSymposium() {
   const navigate = useNavigate();
+  
+  const user = useAuthUser<UserType>();
+
   const {
     register,
     handleSubmit,
@@ -27,8 +30,9 @@ export function CreateSymposium() {
 
   const onSubmit = async (data) => {
     try {
-      await client.post('/symposiums', data);
-      navigate('/symposiums');
+      await client.post('/symposiums', data, {headers: {Authorization: `Bearer ${user.token}`}});
+
+      navigate('/');
     } catch (error) {
       console.error('Error creating symposium:', error);
     }
@@ -100,14 +104,6 @@ export function CreateSymposium() {
             error={!!errors.endDate}
             helperText={errors.endDate?.message}
             InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            label="Nome do Organizador"
-            variant="outlined"
-            fullWidth
-            {...register('organizerName')}
-            error={!!errors.organizerName}
-            helperText={errors.organizerName?.message}
           />
           <TextField
             label="Descrição"
