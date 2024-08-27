@@ -51,7 +51,7 @@ export function Login() {
           name: response.data.user.name,
         },
       });
-      navigate("/");
+      navigate(`/${response.data.user.type}/dash`);
     } catch (error) {
       console.error(error);
     }
@@ -135,7 +135,14 @@ export function Login() {
         </Form>
 
         <Box>
-          <Button variant="outlined">Registrar-se</Button>
+          <Button
+            variant="outlined"
+            onClick={() => {
+              navigate("/register");
+            }}
+          >
+            Registrar-se
+          </Button>
         </Box>
       </Box>
     </Box>
