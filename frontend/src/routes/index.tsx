@@ -10,21 +10,17 @@ import { UserType } from "../types/userType";
 import { organizerRoutes } from "./organizerRoutes";
 import { participantRoutes } from "./participantRoutes";
 
-const redirectByUserType = (userType: string | null) => {
-  if (userType) {
-    return false;
-  }
-  if (userType === "organizer") {
-    return <Navigate to="/organizer" replace={true} />;
-  }
-  return <Navigate to="/participant" replace={true} />;
-};
-
 const getRouter = (userType: string | null = null) =>
   createBrowserRouter([
     {
       path: "/",
-      element: redirectByUserType(userType) || (
+      element: userType ? (
+        userType === "organizer" ? (
+          <Navigate to="/organizer" replace={true} />
+        ) : (
+          <Navigate to="/participant" replace={true} />
+        )
+      ) : (
         <Navigate to="/login" replace={true} />
       ),
     },
