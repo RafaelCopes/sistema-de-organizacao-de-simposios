@@ -1,18 +1,13 @@
-import { Button } from "@mui/material";
-import { client } from "./config/client";
+import { Box, CssBaseline, StyledEngineProvider } from "@mui/material";
+import { RootRouter } from "./routes";
 
-function App() {
-  client.get("/users").then((data) => {
-    console.log(data);
-  });
-
+export function App() {
   return (
-    <>
-      <div>
-        <Button variant="contained">teste</Button>
-      </div>
-    </>
+    <StyledEngineProvider injectFirst>
+      <CssBaseline />
+      <Box className="MainDiv">
+        <RootRouter />
+      </Box>
+    </StyledEngineProvider>
   );
 }
-
-export default App;
