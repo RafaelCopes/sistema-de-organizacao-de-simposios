@@ -4,7 +4,13 @@ import { createSymposiumSchema, updateSymposiumSchema, idSchema } from '../zodSc
 
 export const getAllSymposiums = async (req: Request, res: Response) => {
     try {
-        const symposiums = await prisma.symposium.findMany();
+        const symposiums = await prisma.symposium.findMany({
+            include: {
+                organizer: true,  // Include the organizer's details if needed
+                events: true,     // Include related events if needed
+                participants: true, // Include participant information if needed
+            },
+        });
         res.json(symposiums);
     } catch (error) {
         res.status(500).json({ message: 'Error retrieving symposiums.' });
@@ -23,6 +29,15 @@ export const getSymposiumById = async (req: Request, res: Response) => {
     try {
         const symposium = await prisma.symposium.findUnique({
             where: { id },
+            include: {
+                organizer: true,  // Include the organizer's details if needed
+                events: true,     // Include related events if needed
+                participants: {
+                    include: {
+                        user: true,  // Include participant user details if needed
+                    },
+                },
+            },
         });
 
         if (!symposium) {
@@ -51,7 +66,7 @@ export const createSymposium = async (req: Request, res: Response) => {
                 startDate: new Date(startDate), 
                 endDate: new Date(endDate), 
                 location, 
-                organizerId: req.user.id,
+                organizerId: req.user.id,  // Set the organizer ID to the logged-in user
             },
         });
         res.status(201).json(symposium);
@@ -134,23 +149,5 @@ export const deleteSymposium = async (req: Request, res: Response) => {
         res.status(204).send();
     } catch (error) {
         res.status(500).json({ message: 'Error deleting symposium.' });
-    }
-};
-
-export const listUserSymposiums = async (req: Request, res: Response) => {
-    const userId = req.user.id;  // Assuming userId is available through authentication
-
-    try {
-        const symposiums = await prisma.symposium.findMany({
-            where: { organizerId: userId },
-        });
-
-        if (symposiums.length === 0) {
-            return res.status(404).json({ message: 'No symposiums found for this organizer.' });
-        }
-
-        res.json(symposiums);
-    } catch (error) {
-        res.status(500).json({ message: 'Error retrieving symposiums for organizer.' });
     }
 };

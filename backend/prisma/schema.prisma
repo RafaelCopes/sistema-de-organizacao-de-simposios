@@ -33,45 +33,69 @@ model Certificate {
     Event         Event?     @relation(fields: [eventId], references: [id])
 }
 
-
 model User {
-  id           String         @id @default(uuid())
-  name         String
-  email        String         @unique
-  password     String
-  type         String
-  symposiums   Symposium[]
-  events       Event[]
-  registrations Registration[]
-  certificates Certificate[]
+  id                   String                   @id @default(uuid())
+  name                 String
+  email                String                   @unique
+  password             String
+  type                 String
+  organizedSymposiums  Symposium[]              @relation("OrganizerOfSymposiums")
+  organizedEvents      Event[]                  @relation("OrganizerOfEvents")
+  participantSymposiums ParticipantSymposium[]  // Many-to-many relation for participants in symposiums
+  participantEvents    ParticipantEvent[]        // Many-to-many relation for participants in events
+  registrations        Registration[]
+  certificates         Certificate[]
 }
 
 model Symposium {
-  id          String        @id @default(uuid())
-  name        String
-  description String
-  startDate   DateTime
-  endDate     DateTime
-  location    String
-  organizer   User          @relation(fields: [organizerId], references: [id])
-  organizerId String
-  events      Event[]
-  registrations Registration[]
-  certificates Certificate[]
+  id                String                  @id @default(uuid())
+  name              String
+  description       String
+  startDate         DateTime
+  endDate           DateTime
+  location          String
+  organizer         User                    @relation("OrganizerOfSymposiums", fields: [organizerId], references: [id])
+  organizerId       String
+  events            Event[]
+  registrations     Registration[]
+  certificates      Certificate[]
+  participants      ParticipantSymposium[]  // Many-to-many relation for participants
+}
+
+model ParticipantSymposium {
+  id           String     @id @default(uuid())
+  userId       String
+  symposiumId  String
+  user         User       @relation(fields: [userId], references: [id])
+  symposium    Symposium  @relation(fields: [symposiumId], references: [id])
+
+  @@unique([userId, symposiumId]) // Ensure a user can't be linked to the same symposium more than once
 }
 
 model Event {
-  id           String        @id @default(uuid())
-  name         String
-  description  String
-  date         DateTime
-  startTime    DateTime
-  endTime      DateTime
-  capacity     Int
-  level        String
-  symposium    Symposium     @relation(fields: [symposiumId], references: [id])
-  symposiumId  String
-  participants User[]
-  registrations Registration[]
-  certificates Certificate[]
+  id                 String                 @id @default(uuid())
+  name               String
+  description        String
+  date               DateTime
+  startTime          DateTime
+  endTime            DateTime
+  capacity           Int
+  level              String
+  symposium          Symposium              @relation(fields: [symposiumId], references: [id])
+  symposiumId        String
+  organizer          User                   @relation("OrganizerOfEvents", fields: [organizerId], references: [id])
+  organizerId        String
+  participants       ParticipantEvent[]     // Many-to-many relation for participants
+  registrations      Registration[]
+  certificates       Certificate[]
+}
+
+model ParticipantEvent {
+  id           String     @id @default(uuid())
+  userId       String
+  eventId      String
+  user         User       @relation(fields: [userId], references: [id])
+  event        Event      @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, eventId]) // Ensure a user can't be linked to the same event more than once
 }

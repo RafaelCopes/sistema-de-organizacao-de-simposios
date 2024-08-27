@@ -11,8 +11,18 @@ export const listUsers = async (req: Request, res: Response) => {
         name: true,
         email: true,
         type: true,
-        symposiums: true,
-        events: true,
+        organizedSymposiums: true,  // Fetch the symposiums the user organizes
+        organizedEvents: true,      // Fetch the events the user organizes
+        participantSymposiums: {    // Fetch the symposiums where the user is a participant
+          include: {
+            symposium: true,        // Include symposium details
+          },
+        },
+        participantEvents: {        // Fetch the events where the user is a participant
+          include: {
+            event: true,            // Include event details
+          },
+        },
       },
     });
     res.json(users);
@@ -43,5 +53,31 @@ export const createUser = async (req: Request, res: Response) => {
     } else {
       res.status(500).json({ message: "Error creating user." });
     }
+  }
+};
+
+export const listUserSymposiums = async (req: Request, res: Response) => {
+  const userId = req.user.id;  // Assuming userId is available through authentication
+
+  try {
+      const symposiums = await prisma.symposium.findMany({
+          where: { organizerId: userId }, // Fetch symposiums where the user is the organizer
+          include: {
+            events: true, // Include related events
+            participants: {  // Include participant details
+              include: {
+                user: true, // Include user details of participants
+              },
+            },
+          },
+      });
+
+      if (symposiums.length === 0) {
+          return res.status(404).json({ message: 'No symposiums found for this user.' });
+      }
+
+      res.json(symposiums);
+  } catch (error) {
+      res.status(500).json({ message: 'Error retrieving symposiums for user.' });
   }
 };

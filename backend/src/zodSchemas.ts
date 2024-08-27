@@ -54,18 +54,19 @@ export const updateEventSchema = z.object({
     level: z.enum(['beginner', 'intermediate', 'advanced']).optional(),
 });
 
-export const approveOrRejectSymposiumRegistrationSchema = z.object({
+export const approveOrRejectSymposiumRegistrationParamsSchema = z.object({
     symposiumId: z.string().uuid("Invalid symposium ID format."), // Assuming the event ID is a UUID
     registrationId: z.string().uuid("Invalid registration ID format."), // Assuming the registration ID is a UUID
-    status: z.enum(['accepted', 'rejected']),
   });
 
-export const approveOrRejectEventRegistrationSchema = z.object({
+export const approveOrRejectEventRegistrationParamsSchema = z.object({
   eventId: z.string().uuid("Invalid event ID format."), // Assuming the event ID is a UUID
   registrationId: z.string().uuid("Invalid registration ID format."), // Assuming the registration ID is a UUID
-  status: z.enum(['accepted', 'rejected']),
 });
 
+export const statusSchema = z.object({
+    status: z.enum(['accepted', 'rejected']),
+});
 
 export const getParticipantsSchema = z.object({
     id: z.string().uuid('Invalid UUID for symposium or event id'),

@@ -2,8 +2,9 @@ import { Request, Response } from 'express';
 import prisma from '../../prismaClient';
 import { 
     idSchema,
-    approveOrRejectSymposiumRegistrationSchema,
-    approveOrRejectEventRegistrationSchema
+    approveOrRejectSymposiumRegistrationParamsSchema,
+    approveOrRejectEventRegistrationParamsSchema,
+    statusSchema,
 } from '../zodSchemas';
 
 export const requestSymposiumRegistration = async (req: Request, res: Response) => {
@@ -26,7 +27,17 @@ export const requestSymposiumRegistration = async (req: Request, res: Response) 
         });
 
         if (existingRegistration) {
-            return res.status(400).json({ message: 'Você já está registrado para este simpósio.' });
+            if (existingRegistration.status === 'accepted') {
+                return res.status(400).json({ message: 'Você já está registrado para este simpósio.' });
+            }
+
+            if (existingRegistration.status === 'pending') {
+                return res.status(400).json({ message: 'Você já tem uma solicitação de registro pendente para este simpósio.' });
+            }
+
+            if (existingRegistration.status === 'rejected') {
+                return res.status(400).json({ message: 'Sua solicitação de registro para este simpósio já foi rejeitada.' });
+            }
         }
 
         // Criar a solicitação de registro
@@ -74,7 +85,17 @@ export const requestEventRegistration = async (req: Request, res: Response) => {
         });
 
         if (existingRegistration) {
-            return res.status(400).json({ message: 'Você já está registrado para este evento.' });
+            if (existingRegistration.status === 'accepted') {
+                return res.status(400).json({ message: 'Você já está registrado para este evento.' });
+            }
+
+            if (existingRegistration.status === 'pending') {
+                return res.status(400).json({ message: 'Você já tem uma solicitação de registro pendente para este evento.' });
+            }
+
+            if (existingRegistration.status === 'rejected') {
+                return res.status(400).json({ message: 'Sua solicitação de registro para este evento já foi rejeitada.' });
+            }
         }
 
         // Verificar se o usuário está registrado para o simpósio do evento
@@ -106,8 +127,8 @@ export const requestEventRegistration = async (req: Request, res: Response) => {
 };
 
 export const approveOrRejectSymposiumRegistration = async (req: Request, res: Response) => {
-    const parsedParams = approveOrRejectSymposiumRegistrationSchema.safeParse(req.params);
-    const parsedBody = approveOrRejectSymposiumRegistrationSchema.safeParse(req.body);
+    const parsedParams = approveOrRejectSymposiumRegistrationParamsSchema.safeParse(req.params);
+    const parsedBody = statusSchema.safeParse(req.body);
 
     if (!parsedParams.success) {
         return res.status(400).json({ message: 'Invalid parameters', errors: parsedParams.error.errors });
@@ -145,14 +166,12 @@ export const approveOrRejectSymposiumRegistration = async (req: Request, res: Re
             data: { status },
         });
 
-        // Se o registro for aceito, associe o usuário ao simpósio sem alterar o organizerId
+        // Se o registro for aceito, associe o usuário ao simpósio
         if (status === 'accepted') {
-            await prisma.user.update({
-                where: { id: updatedRegistration.userId },
+            await prisma.participantSymposium.create({
                 data: {
-                    symposiums: {
-                        connect: { id: symposiumId },
-                    },
+                    userId: updatedRegistration.userId,
+                    symposiumId: symposiumId,
                 },
             });
         }
@@ -164,8 +183,8 @@ export const approveOrRejectSymposiumRegistration = async (req: Request, res: Re
 };
 
 export const approveOrRejectEventRegistration = async (req: Request, res: Response) => {
-    const parsedParams = approveOrRejectEventRegistrationSchema.safeParse(req.params);
-    const parsedBody = approveOrRejectEventRegistrationSchema.safeParse(req.body);
+    const parsedParams = approveOrRejectEventRegistrationParamsSchema.safeParse(req.params);
+    const parsedBody = statusSchema.safeParse(req.body);
 
     if (!parsedParams.success) {
         return res.status(400).json({ message: 'Invalid parameters', errors: parsedParams.error.errors });
@@ -204,14 +223,12 @@ export const approveOrRejectEventRegistration = async (req: Request, res: Respon
             data: { status },
         });
 
-        // Se o registro for aceito, associe o usuário ao evento sem alterar o organizerId
+        // Se o registro for aceito, associe o usuário ao evento
         if (status === 'accepted') {
-            await prisma.user.update({
-                where: { id: updatedRegistration.userId },
+            await prisma.participantEvent.create({
                 data: {
-                    events: {
-                        connect: { id: eventId },
-                    },
+                    userId: updatedRegistration.userId,
+                    eventId: eventId,
                 },
             });
         }

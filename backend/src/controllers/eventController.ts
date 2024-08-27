@@ -18,6 +18,13 @@ export const getAllEventsForSymposium = async (req: Request, res: Response) => {
   try {
     const events = await prisma.event.findMany({
       where: { symposiumId: id },
+      include: {
+        participants: {
+          include: {
+            user: true, // Include participant user details if needed
+          },
+        },
+      },
     });
 
     if (events.length === 0) {
@@ -39,7 +46,18 @@ export const createEvent = async (req: Request, res: Response) => {
 
   const { name, description, date, startTime, endTime, capacity, level, symposiumId } = parsedData.data;
 
+  const userId = req.user.id; // Assuming req.user.id contains the authenticated user's ID
+
   try {
+    // Check if the user is the organizer of the symposium
+    const symposium = await prisma.symposium.findUnique({
+      where: { id: symposiumId },
+    });
+
+    if (!symposium || symposium.organizerId !== userId) {
+      return res.status(403).json({ message: 'Access denied. Only the organizer of the symposium can create an event.' });
+    }
+
     const event = await prisma.event.create({
       data: {
         name,
@@ -50,6 +68,7 @@ export const createEvent = async (req: Request, res: Response) => {
         capacity,
         level,
         symposiumId,
+        organizerId: userId, // Associate the event with the organizer (redundant since it's already associated through the symposium)
       },
     });
     res.status(201).json(event);
