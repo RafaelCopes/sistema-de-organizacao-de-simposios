@@ -240,6 +240,24 @@ export function SymposiumDetails() {
                 </Button>
               )}
 
+              <Button
+                variant="contained"
+                sx={{
+                  position: "absolute",
+                  top: "20px",
+                  right: "20px",
+                  backgroundColor: returnStatusColor(),
+                  "&:hover": {
+                    backgroundColor: "#66BB6A",
+                  },
+                }}
+                onClick={() => {
+                  navigate(`registrations`);
+                }}
+              >
+                Visualizar Solicitações
+              </Button>
+
               {user.type === "participant" && (
                 <Button
                   variant="contained"
