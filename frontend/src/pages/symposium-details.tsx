@@ -22,7 +22,7 @@ export function SymposiumDetails() {
   const [symposium, setSymposium] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isRegistered, setIsRegistered] = useState(false);
+  const [registeredStatus, setregisteredStatus] = useState<string>("");
   const [isRegistering, setIsRegistering] = useState(false);
 
   useEffect(() => {
@@ -31,19 +31,24 @@ export function SymposiumDetails() {
         const symposiumResponse = await client.get(`/symposiums/${id}`);
         setSymposium(symposiumResponse.data);
 
-        const eventsResponse = await client.get(`/symposiums/${id}/events`);
-        setEvents(eventsResponse.data);
+        console.log(symposiumResponse.data);
 
+        console.log("chegou aqui");
         // Check if the user is registered for this symposium and status is accepted
         if (user.type === "participant") {
           const registration = symposiumResponse.data.registrations.find(
-            (participant) => participant.id === user.id
+            (participant) => {
+              return participant.user.email === user.email;
+            }
           );
-          
-          console.log(registration.data);
 
-          setIsRegistered(registration.status === "accepted");
+          console.log("registration", registration);
+
+          setregisteredStatus(registration.status);
         }
+
+        const eventsResponse = await client.get(`/symposiums/${id}/events`);
+        setEvents(eventsResponse.data);
       } catch (error) {
         console.error("Error fetching symposium details:", error);
       } finally {
@@ -64,7 +69,7 @@ export function SymposiumDetails() {
           headers: { Authorization: `Bearer ${user.token}` },
         }
       );
-      setIsRegistered(true);
+      setregisteredStatus("pending");
     } catch (error) {
       console.error("Error registering for the symposium:", error);
     } finally {
@@ -96,6 +101,32 @@ export function SymposiumDetails() {
       symposium &&
       new Date(symposium.endDate) < currentDate
     );
+  };
+
+  const returnStatus = () => {
+    switch (registeredStatus) {
+      case "accepted":
+        return "Registrado";
+      case "pending":
+        return "Pendente";
+      case "rejected":
+        return "Rejeitado";
+      default:
+        return "Registrar";
+    }
+  };
+
+  const returnStatusColor = () => {
+    switch (registeredStatus) {
+      case "accepted":
+        return "#3F51B5";
+      case "pending":
+        return "#FFC107";
+      case "rejected":
+        return "#F44336";
+      default:
+        return "#4CAF50";
+    }
   };
 
   return (
@@ -185,7 +216,7 @@ export function SymposiumDetails() {
                     position: "absolute",
                     bottom: "20px",
                     right: "20px",
-                    backgroundColor: "#4CAF50",
+                    backgroundColor: returnStatusColor(),
                     "&:hover": {
                       backgroundColor: "#66BB6A",
                     },
@@ -199,22 +230,29 @@ export function SymposiumDetails() {
                 </Button>
               )}
 
-              {user.type === "participant" && !isRegistered && (
+              {user.type === "participant" && (
                 <Button
                   variant="contained"
                   sx={{
                     position: "absolute",
                     bottom: "20px",
                     right: "20px",
-                    backgroundColor: "#4CAF50",
                     "&:hover": {
                       backgroundColor: "#66BB6A",
                     },
+                    "&:disabled": {
+                      backgroundColor: returnStatusColor(),
+                      color: "#000000",
+                    },
                   }}
                   onClick={handleRegisterClick}
-                  disabled={isRegistering}
+                  disabled={
+                    returnStatus() == "Registrado" ||
+                    returnStatus() == "Pendente" ||
+                    returnStatus() == "Rejeitado"
+                  }
                 >
-                  {isRegistering ? "Registrando..." : "Registrar-se"}
+                  {returnStatus()}
                 </Button>
               )}
             </Card>

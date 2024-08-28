@@ -59,6 +59,7 @@ export const RegisterForm = () => {
           email: data.email,
           type: response.data.user.type,
           name: response.data.user.name,
+          token: response.data.token,
         },
       });
       navigate(`/${response.data.user.type}/dash`);

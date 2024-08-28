@@ -44,6 +44,11 @@ export const getSymposiumById = async (req: Request, res: Response) => {
             user: true, // Include participant user details if needed
           },
         },
+        registrations: {
+          include: {
+            user: true, // Include participant user details if needed
+          },
+        },
       },
     });
 
