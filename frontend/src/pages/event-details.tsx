@@ -69,10 +69,16 @@ export function EventDetails() {
 
   const isCertificateButtonVisible = () => {
     const currentDate = new Date();
-    return user.type === "organizer" && event && new Date(event.date) < currentDate;
+    return (
+      user.type === "organizer" && event && new Date(event.date) < currentDate
+    );
   };
 
   const returnStatus = () => {
+    if (!isCertificateButtonVisible()) {
+      return "Evento Encerrado";
+    }
+
     switch (registeredStatus) {
       case "accepted":
         return "Registrado";
@@ -86,6 +92,9 @@ export function EventDetails() {
   };
 
   const returnStatusColor = () => {
+    if (!isCertificateButtonVisible()) {
+      return "#AAA";
+    }
     switch (registeredStatus) {
       case "accepted":
         return "#3F51B5";
@@ -163,7 +172,8 @@ export function EventDetails() {
               }}
             >
               <Typography variant="body1" sx={{ marginBottom: "10px" }}>
-                <strong>Data:</strong> {new Date(event.date).toLocaleDateString()}
+                <strong>Data:</strong>{" "}
+                {new Date(event.date).toLocaleDateString()}
               </Typography>
               <Typography variant="body1" sx={{ marginBottom: "10px" }}>
                 <strong>Horário de Início:</strong> {event.startTime}
@@ -224,7 +234,8 @@ export function EventDetails() {
                   disabled={
                     returnStatus() === "Registrado" ||
                     returnStatus() === "Pendente" ||
-                    returnStatus() === "Rejeitado"
+                    returnStatus() === "Rejeitado" ||
+                    !isCertificateButtonVisible()
                   }
                 >
                   {returnStatus()}

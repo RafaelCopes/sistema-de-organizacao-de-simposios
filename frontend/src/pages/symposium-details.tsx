@@ -106,6 +106,10 @@ export function SymposiumDetails() {
   };
 
   const returnStatus = () => {
+    if (!isCertificateButtonVisible()) {
+      return "Evento Encerrado";
+    }
+
     switch (registeredStatus) {
       case "accepted":
         return "Registrado";
@@ -119,6 +123,10 @@ export function SymposiumDetails() {
   };
 
   const returnStatusColor = () => {
+    if (!isCertificateButtonVisible()) {
+      return "#AAA";
+    }
+
     switch (registeredStatus) {
       case "accepted":
         return "#3F51B5";
@@ -251,7 +259,8 @@ export function SymposiumDetails() {
                   disabled={
                     returnStatus() == "Registrado" ||
                     returnStatus() == "Pendente" ||
-                    returnStatus() == "Rejeitado"
+                    returnStatus() == "Rejeitado" ||
+                    !isCertificateButtonVisible()
                   }
                 >
                   {returnStatus()}
