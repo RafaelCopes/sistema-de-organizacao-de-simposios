@@ -12,6 +12,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { client } from "../config/client";
 import useAuthUser from "react-auth-kit/hooks/useAuthUser";
 import { UserType } from "../types/userType";
+import { Sidebar } from "../components/sidebar";
 
 export function EventDetails() {
   const { id } = useParams();
@@ -70,55 +71,7 @@ export function EventDetails() {
         backgroundColor: "#1E1E1E",
       }}
     >
-      {/* Sidebar */}
-      <Box
-        sx={{
-          width: "250px",
-          backgroundColor: "#2C2C2C",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          padding: "20px",
-          margin: "15px",
-          color: "#FFFFFF",
-          boxSizing: "border-box",
-          borderRadius: "10px",
-        }}
-      >
-        <Box>
-          <Typography variant="h6" sx={{ marginBottom: "20px" }}>
-            Nome
-          </Typography>
-          <Typography variant="body2" sx={{ marginBottom: "40px" }}>
-            Email
-          </Typography>
-          <Button
-            variant="contained"
-            sx={{
-              width: "100%",
-              marginBottom: "20px",
-              backgroundColor: "#3F51B5",
-              "&:hover": {
-                backgroundColor: "#5C6BC0",
-              },
-            }}
-            onClick={() => navigate("/create-event")}
-          >
-            Criar Evento
-          </Button>
-        </Box>
-        <Button
-          variant="outlined"
-          color="secondary"
-          sx={{ color: "#FFFFFF", borderColor: "#616161" }}
-          onClick={() => {
-            // Implement logout functionality here
-            console.log("Logout");
-          }}
-        >
-          Deslogar
-        </Button>
-      </Box>
+      <Sidebar />
 
       {/* Main Content */}
       <Box
@@ -173,12 +126,10 @@ export function EventDetails() {
                 {new Date(event.date).toLocaleDateString()}
               </Typography>
               <Typography variant="body1" sx={{ marginBottom: "10px" }}>
-                <strong>Horário de Início:</strong>{" "}
-                {new Date(`${event.date}T${event.startTime}`).toLocaleTimeString()}
+                <strong>Horário de Início:</strong> {event.startTime}
               </Typography>
               <Typography variant="body1" sx={{ marginBottom: "10px" }}>
-                <strong>Horário de Término:</strong>{" "}
-                {new Date(`${event.date} ${event.endTime}`).toLocaleTimeString()}
+                <strong>Horário de Término:</strong> {event.endTime}
               </Typography>
               <Typography variant="body1" sx={{ marginBottom: "10px" }}>
                 <strong>Local:</strong> {event.location}

@@ -2,10 +2,12 @@ import { Box, Button, Typography } from "@mui/material";
 import useAuthUser from "react-auth-kit/hooks/useAuthUser";
 import { useNavigate } from "react-router-dom";
 import { UserType } from "../types/userType";
+import useSignOut from "react-auth-kit/hooks/useSignOut";
 
 export const Sidebar = () => {
   const navigate = useNavigate();
   const user = useAuthUser<UserType>();
+  const signOut = useSignOut();
 
   return (
     <Box
@@ -102,8 +104,8 @@ export const Sidebar = () => {
         color="secondary"
         sx={{ color: "#FFFFFF", borderColor: "#616161" }}
         onClick={() => {
-          // Implement logout functionality here
-          console.log("Logout");
+          signOut();
+          navigate("/");
         }}
       >
         Deslogar

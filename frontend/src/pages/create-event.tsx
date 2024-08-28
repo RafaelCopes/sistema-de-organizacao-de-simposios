@@ -1,11 +1,11 @@
-import { Box, Button, Typography, TextField } from '@mui/material';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { client } from '../config/client';
-import useAuthUser from 'react-auth-kit/hooks/useAuthUser';
-import { UserType } from '../types/userType';
+import { Box, Button, Typography, TextField, MenuItem } from "@mui/material";
+import { useNavigate, useParams } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { client } from "../config/client";
+import useAuthUser from "react-auth-kit/hooks/useAuthUser";
+import { UserType } from "../types/userType";
 
 const timeValidation = (time: string) => {
   // Regex to match HH:MM format
@@ -15,13 +15,21 @@ const timeValidation = (time: string) => {
 const eventSchema = z.object({
   name: z.string().min(1, "O nome é obrigatório."),
   date: z.string().min(1, "A data é obrigatória."),
-  startTime: z.string().refine(timeValidation, 'Formato de hora inválido'),
-  endTime: z.string().refine(timeValidation, 'Formato de hora inválido'),
+  startTime: z.string().refine(timeValidation, "Formato de hora inválido"),
+  endTime: z.string().refine(timeValidation, "Formato de hora inválido"),
   location: z.string().min(1, "O local é obrigatório."),
   level: z.string().min(1, "O nível é obrigatório."),
-  capacity: z.number().min(1, "A capacidade é obrigatória e deve ser pelo menos 1."),
+  capacity: z
+    .number()
+    .min(1, "A capacidade é obrigatória e deve ser pelo menos 1."),
   description: z.string().min(1, "A descrição é obrigatória."),
 });
+
+const levelType = [
+  { value: "advanced", label: "Avançado" },
+  { value: "intermediate", label: "Intermediario" },
+  { value: "beginner", label: "Iniciante" },
+];
 
 export function CreateEvent() {
   const navigate = useNavigate();
@@ -38,10 +46,14 @@ export function CreateEvent() {
 
   const onSubmit = async (data) => {
     try {
-      await client.post('/events', { ...data, symposiumId: id }, { headers: { Authorization: `Bearer ${user.token}` } });
-      navigate('/organizer/dash/' + id);
+      await client.post(
+        "/events",
+        { ...data, symposiumId: id },
+        { headers: { Authorization: `Bearer ${user.token}` } }
+      );
+      navigate("/organizer/dash/" + id);
     } catch (error) {
-      console.error('Error creating event:', error);
+      console.error("Error creating event:", error);
     }
   };
 
@@ -75,12 +87,19 @@ export function CreateEvent() {
           Criar Novo Evento
         </Typography>
 
-        <Box sx={{ display: "flex", flexDirection: "column", gap: "15px", width: "100%" }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "15px",
+            width: "100%",
+          }}
+        >
           <TextField
             label="Nome do Evento"
             variant="outlined"
             fullWidth
-            {...register('name')}
+            {...register("name")}
             error={!!errors.name}
             helperText={errors.name?.message}
           />
@@ -89,7 +108,7 @@ export function CreateEvent() {
             variant="outlined"
             fullWidth
             type="date"
-            {...register('date')}
+            {...register("date")}
             error={!!errors.date}
             helperText={errors.date?.message}
             InputLabelProps={{ shrink: true }}
@@ -99,7 +118,7 @@ export function CreateEvent() {
             variant="outlined"
             fullWidth
             type="time"
-            {...register('startTime')}
+            {...register("startTime")}
             error={!!errors.startTime}
             helperText={errors.startTime?.message}
             InputLabelProps={{ shrink: true }}
@@ -109,7 +128,7 @@ export function CreateEvent() {
             variant="outlined"
             fullWidth
             type="time"
-            {...register('endTime')}
+            {...register("endTime")}
             error={!!errors.endTime}
             helperText={errors.endTime?.message}
             InputLabelProps={{ shrink: true }}
@@ -118,24 +137,31 @@ export function CreateEvent() {
             label="Local"
             variant="outlined"
             fullWidth
-            {...register('location')}
+            {...register("location")}
             error={!!errors.location}
             helperText={errors.location?.message}
           />
           <TextField
+            select
             label="Nível"
             variant="outlined"
             fullWidth
-            {...register('level')}
+            {...register("level")}
             error={!!errors.level}
-            helperText={errors.level?.message}
-          />
+          >
+            {levelType.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </TextField>
+
           <TextField
             label="Capacidade"
             variant="outlined"
             fullWidth
             type="number"
-            {...register('capacity', { valueAsNumber: true })}
+            {...register("capacity", { valueAsNumber: true })}
             error={!!errors.capacity}
             helperText={errors.capacity?.message}
           />
@@ -145,7 +171,7 @@ export function CreateEvent() {
             fullWidth
             multiline
             rows={4}
-            {...register('description')}
+            {...register("description")}
             error={!!errors.description}
             helperText={errors.description?.message}
           />
