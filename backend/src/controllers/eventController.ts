@@ -1,16 +1,14 @@
-import { Request, Response } from 'express';
-import prisma from '../../prismaClient';
-import {
-  createEventSchema,
-  updateEventSchema,
-  idSchema,
-} from '../zodSchemas';
+import { Request, Response } from "express";
+import prisma from "../../prismaClient";
+import { createEventSchema, updateEventSchema, idSchema } from "../zodSchemas";
 
 export const getAllEventsForSymposium = async (req: Request, res: Response) => {
   const parsedData = idSchema.safeParse(req.params);
 
   if (!parsedData.success) {
-    return res.status(400).json({ message: 'Invalid data', errors: parsedData.error.errors });
+    return res
+      .status(400)
+      .json({ message: "Invalid data", errors: parsedData.error.errors });
   }
 
   const { id } = parsedData.data;
@@ -28,12 +26,14 @@ export const getAllEventsForSymposium = async (req: Request, res: Response) => {
     });
 
     if (events.length === 0) {
-      return res.status(404).json({ message: 'No events found for this symposium.' });
+      return res
+        .status(404)
+        .json({ message: "No events found for this symposium." });
     }
 
     res.json(events);
   } catch (error) {
-    res.status(500).json({ message: 'Error retrieving events for symposium.' });
+    res.status(500).json({ message: "Error retrieving events for symposium." });
   }
 };
 
@@ -41,10 +41,22 @@ export const createEvent = async (req: Request, res: Response) => {
   const parsedData = createEventSchema.safeParse(req.body);
 
   if (!parsedData.success) {
-    return res.status(400).json({ message: 'Invalid data', errors: parsedData.error.errors });
+    return res
+      .status(400)
+      .json({ message: "Invalid data", errors: parsedData.error.errors });
   }
 
-  const { name, description, date, startTime, endTime, capacity, level, location, symposiumId } = parsedData.data;
+  const {
+    name,
+    description,
+    date,
+    startTime,
+    endTime,
+    capacity,
+    level,
+    location,
+    symposiumId,
+  } = parsedData.data;
 
   const userId = req.user.id; // Assuming req.user.id contains the authenticated user's ID
 
@@ -55,7 +67,12 @@ export const createEvent = async (req: Request, res: Response) => {
     });
 
     if (!symposium || symposium.organizerId !== userId) {
-      return res.status(403).json({ message: 'Access denied. Only the organizer of the symposium can create an event.' });
+      return res
+        .status(403)
+        .json({
+          message:
+            "Access denied. Only the organizer of the symposium can create an event.",
+        });
     }
 
     const event = await prisma.event.create({
@@ -74,7 +91,7 @@ export const createEvent = async (req: Request, res: Response) => {
     });
     res.status(201).json(event);
   } catch (error) {
-    res.status(500).json({ message: 'Error creating event.' });
+    res.status(500).json({ message: "Error creating event." });
   }
 };
 
@@ -83,15 +100,23 @@ export const updateEvent = async (req: Request, res: Response) => {
   const parsedData = updateEventSchema.safeParse(req.body);
 
   if (!parsedParams.success) {
-    return res.status(400).json({ message: 'Invalid parameters', errors: parsedParams.error.errors });
+    return res
+      .status(400)
+      .json({
+        message: "Invalid parameters",
+        errors: parsedParams.error.errors,
+      });
   }
 
   if (!parsedData.success) {
-    return res.status(400).json({ message: 'Invalid data', errors: parsedData.error.errors });
+    return res
+      .status(400)
+      .json({ message: "Invalid data", errors: parsedData.error.errors });
   }
 
   const { id } = parsedParams.data;
-  const { name, description, date, startTime, endTime, capacity, level } = parsedData.data;
+  const { name, description, date, startTime, endTime, capacity, level } =
+    parsedData.data;
   const userId = req.user.id;
 
   try {
@@ -101,11 +126,16 @@ export const updateEvent = async (req: Request, res: Response) => {
     });
 
     if (!event) {
-      return res.status(404).json({ message: 'Event not found' });
+      return res.status(404).json({ message: "Event not found" });
     }
 
     if (event.symposium.organizerId !== userId) {
-      return res.status(403).json({ message: 'Access denied. Only the organizer of the symposium can update this event.' });
+      return res
+        .status(403)
+        .json({
+          message:
+            "Access denied. Only the organizer of the symposium can update this event.",
+        });
     }
 
     const updatedEvent = await prisma.event.update({
@@ -122,7 +152,7 @@ export const updateEvent = async (req: Request, res: Response) => {
     });
     res.json(updatedEvent);
   } catch (error) {
-    res.status(500).json({ message: 'Error updating event.' });
+    res.status(500).json({ message: "Error updating event." });
   }
 };
 
@@ -130,7 +160,9 @@ export const deleteEvent = async (req: Request, res: Response) => {
   const parsedData = idSchema.safeParse(req.params);
 
   if (!parsedData.success) {
-    return res.status(400).json({ message: 'Invalid data', errors: parsedData.error.errors });
+    return res
+      .status(400)
+      .json({ message: "Invalid data", errors: parsedData.error.errors });
   }
 
   const { id } = parsedData.data;
@@ -143,11 +175,16 @@ export const deleteEvent = async (req: Request, res: Response) => {
     });
 
     if (!event) {
-      return res.status(404).json({ message: 'Event not found' });
+      return res.status(404).json({ message: "Event not found" });
     }
 
     if (event.symposium.organizerId !== userId) {
-      return res.status(403).json({ message: 'Access denied. Only the organizer of the symposium can delete this event.' });
+      return res
+        .status(403)
+        .json({
+          message:
+            "Access denied. Only the organizer of the symposium can delete this event.",
+        });
     }
 
     await prisma.event.delete({
@@ -155,16 +192,17 @@ export const deleteEvent = async (req: Request, res: Response) => {
     });
     res.status(204).send();
   } catch (error) {
-    res.status(500).json({ message: 'Error deleting event.' });
+    res.status(500).json({ message: "Error deleting event." });
   }
 };
-
 
 export const getEventById = async (req: Request, res: Response) => {
   const parsedData = idSchema.safeParse(req.params);
 
   if (!parsedData.success) {
-    return res.status(400).json({ message: 'Invalid data', errors: parsedData.error.errors });
+    return res
+      .status(400)
+      .json({ message: "Invalid data", errors: parsedData.error.errors });
   }
 
   const { id } = parsedData.data;
@@ -174,17 +212,21 @@ export const getEventById = async (req: Request, res: Response) => {
       where: { id },
       include: {
         symposium: true, // Include related symposium details if needed
-        registrations: true, // Include related registrations if needed
+        registrations: {
+          include: {
+            user: true, // Include participant user details if needed
+          },
+        },
       },
     });
 
     if (!event) {
-      return res.status(404).json({ message: 'Event not found.' });
+      return res.status(404).json({ message: "Event not found." });
     }
 
     res.json(event);
   } catch (error) {
-    console.error('Error retrieving event:', error);
-    res.status(500).json({ message: 'Error retrieving event.' });
+    console.error("Error retrieving event:", error);
+    res.status(500).json({ message: "Error retrieving event." });
   }
 };
