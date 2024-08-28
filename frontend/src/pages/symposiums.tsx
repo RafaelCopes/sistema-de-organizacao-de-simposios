@@ -12,6 +12,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { client } from "../config/client";
 import { Sidebar } from "../components/sidebar";
+import useAuthUser from "react-auth-kit/hooks/useAuthUser";
+import { UserType } from "../types/userType";
 
 type Symposium = {
   id: number;
@@ -21,13 +23,21 @@ type Symposium = {
 
 export function Symposiums() {
   const navigate = useNavigate();
+  const user = useAuthUser<UserType>();
   const [symposiums, setSymposiums] = useState<Symposium[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchSymposiums = async () => {
       try {
-        const response = await client.get("/symposiums");
+        let response;
+        if (user.type === "organizer") {
+          // Fetch symposiums the user is organizing
+          response = await client.get("/user/symposiums", { headers: { Authorization: `Bearer ${user.token}` } });
+        } else {
+          // Fetch all symposiums
+          response = await client.get("/symposiums");
+        }
         setSymposiums(response.data);
       } catch (error) {
         console.error("Error fetching symposiums:", error);
@@ -37,7 +47,7 @@ export function Symposiums() {
     };
 
     fetchSymposiums();
-  }, []);
+  }, [user]);
 
   if (loading) {
     return (
@@ -75,16 +85,43 @@ export function Symposiums() {
           padding: "30px",
           backgroundColor: "#1E1E1E",
           overflowY: "auto",
+          position: "relative",
         }}
       >
-        <Typography
-          variant="h4"
-          gutterBottom
-          sx={{ color: "#FFFFFF", textAlign: "center" }}
+        {/* Title and Create Button */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "20px",
+          }}
         >
-          Lista de todos os simpósios
-        </Typography>
+          <Typography
+            variant="h4"
+            sx={{ color: "#FFFFFF", textAlign: "center" }}
+          >
+            {user.type === "organizer"
+              ? "Simpósios Organizados"
+              : "Simpósios Disponíveis"}
+          </Typography>
+          {user.type === "organizer" && (
+            <Button
+              variant="contained"
+              sx={{
+                backgroundColor: "#4CAF50",
+                "&:hover": {
+                  backgroundColor: "#66BB6A",
+                },
+              }}
+              onClick={() => navigate("create")}
+            >
+              Criar Simpósio
+            </Button>
+          )}
+        </Box>
 
+        {/* Symposiums List */}
         {symposiums.length === 0 ? (
           <Typography sx={{ color: "#BBBBBB", textAlign: "center" }}>
             Nenhum simpósio disponível.
