@@ -13,6 +13,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { client } from "../config/client";
 import useAuthUser from "react-auth-kit/hooks/useAuthUser";
 import { UserType } from "../types/userType";
+import { Sidebar } from "../components/sidebar"; // Import the Sidebar component
 
 export function SymposiumDetails() {
   const { id } = useParams();
@@ -21,14 +22,28 @@ export function SymposiumDetails() {
   const [symposium, setSymposium] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
 
   useEffect(() => {
     const fetchSymposiumDetails = async () => {
       try {
         const symposiumResponse = await client.get(`/symposiums/${id}`);
         setSymposium(symposiumResponse.data);
+
         const eventsResponse = await client.get(`/symposiums/${id}/events`);
         setEvents(eventsResponse.data);
+
+        // Check if the user is registered for this symposium and status is accepted
+        if (user.type === "participant") {
+          const registration = symposiumResponse.data.registrations.find(
+            (participant) => participant.id === user.id
+          );
+          
+          console.log(registration.data);
+
+          setIsRegistered(registration.status === "accepted");
+        }
       } catch (error) {
         console.error("Error fetching symposium details:", error);
       } finally {
@@ -37,7 +52,25 @@ export function SymposiumDetails() {
     };
 
     fetchSymposiumDetails();
-  }, [id]);
+  }, [id, user]);
+
+  const handleRegisterClick = async () => {
+    setIsRegistering(true);
+    try {
+      await client.post(
+        `/symposiums/${id}/registration`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${user.token}` },
+        }
+      );
+      setIsRegistered(true);
+    } catch (error) {
+      console.error("Error registering for the symposium:", error);
+    } finally {
+      setIsRegistering(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -74,41 +107,8 @@ export function SymposiumDetails() {
         backgroundColor: "#1E1E1E",
       }}
     >
-      {/* Sidebar */}
-      <Box
-        sx={{
-          width: "250px",
-          backgroundColor: "#2C2C2C",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          padding: "20px",
-          margin: "15px",
-          color: "#FFFFFF",
-          boxSizing: "border-box",
-          borderRadius: "10px",
-        }}
-      >
-        <Box>
-          <Typography variant="h6" sx={{ marginBottom: "20px" }}>
-            Nome
-          </Typography>
-          <Typography variant="body2" sx={{ marginBottom: "40px" }}>
-            Email
-          </Typography>
-        </Box>
-        <Button
-          variant="outlined"
-          color="secondary"
-          sx={{ color: "#FFFFFF", borderColor: "#616161" }}
-          onClick={() => {
-            // Implement logout functionality here
-            console.log("Logout");
-          }}
-        >
-          Deslogar
-        </Button>
-      </Box>
+      {/* Replace old sidebar with Sidebar component */}
+      <Sidebar />
 
       {/* Main Content */}
       <Box
@@ -135,18 +135,20 @@ export function SymposiumDetails() {
               >
                 {symposium.name}
               </Typography>
-              <Button
-                variant="contained"
-                sx={{
-                  backgroundColor: "#3F51B5",
-                  "&:hover": {
-                    backgroundColor: "#5C6BC0",
-                  },
-                }}
-                onClick={() => navigate(`create`)}
-              >
-                Criar Evento
-              </Button>
+              {user.type === "organizer" && (
+                <Button
+                  variant="contained"
+                  sx={{
+                    backgroundColor: "#3F51B5",
+                    "&:hover": {
+                      backgroundColor: "#5C6BC0",
+                    },
+                  }}
+                  onClick={() => navigate(`create`)}
+                >
+                  Criar Evento
+                </Button>
+              )}
             </Box>
 
             <Card
@@ -194,6 +196,25 @@ export function SymposiumDetails() {
                   }}
                 >
                   Emitir Certificados
+                </Button>
+              )}
+
+              {user.type === "participant" && !isRegistered && (
+                <Button
+                  variant="contained"
+                  sx={{
+                    position: "absolute",
+                    bottom: "20px",
+                    right: "20px",
+                    backgroundColor: "#4CAF50",
+                    "&:hover": {
+                      backgroundColor: "#66BB6A",
+                    },
+                  }}
+                  onClick={handleRegisterClick}
+                  disabled={isRegistering}
+                >
+                  {isRegistering ? "Registrando..." : "Registrar-se"}
                 </Button>
               )}
             </Card>

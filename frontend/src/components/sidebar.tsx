@@ -26,8 +26,11 @@ export const Sidebar = () => {
         <Typography variant="h6" sx={{ marginBottom: "20px" }}>
           {user?.name}
         </Typography>
-        <Typography variant="body2" sx={{ marginBottom: "40px" }}>
+        <Typography variant="body2" sx={{ marginBottom: "20px" }}>
           Email: {user?.email}
+        </Typography>
+        <Typography variant="body2" sx={{ marginBottom: "20px" }}>
+          {user?.type === "organizer" ? "Organizador" : "Participante"}
         </Typography>
 
         {user?.type === "organizer" ? (
