@@ -46,6 +46,7 @@ export const createEventSchema = z.object({
     endTime: z.string().refine(timeValidation, 'Formato de hora inválido'),
     capacity: z.number().int().positive('Capacity must be a positive integer'),
     level: z.enum(['beginner', 'intermediate', 'advanced']),
+    location: z.string(),
     symposiumId: z.string().uuid('Invalid UUID for symposiumId'),
 });
 

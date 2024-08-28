@@ -81,6 +81,7 @@ model Event {
   endTime            String
   capacity           Int
   level              String
+  location           String
   symposium          Symposium              @relation(fields: [symposiumId], references: [id])
   symposiumId        String
   organizer          User                   @relation("OrganizerOfEvents", fields: [organizerId], references: [id])

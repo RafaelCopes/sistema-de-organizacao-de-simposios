@@ -44,7 +44,7 @@ export const createEvent = async (req: Request, res: Response) => {
     return res.status(400).json({ message: 'Invalid data', errors: parsedData.error.errors });
   }
 
-  const { name, description, date, startTime, endTime, capacity, level, symposiumId } = parsedData.data;
+  const { name, description, date, startTime, endTime, capacity, level, location, symposiumId } = parsedData.data;
 
   const userId = req.user.id; // Assuming req.user.id contains the authenticated user's ID
 
@@ -67,6 +67,7 @@ export const createEvent = async (req: Request, res: Response) => {
         endTime,
         capacity,
         level,
+        location,
         symposiumId,
         organizerId: userId, // Associate the event with the organizer (redundant since it's already associated through the symposium)
       },
