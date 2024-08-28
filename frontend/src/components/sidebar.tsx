@@ -6,6 +6,7 @@ import { UserType } from "../types/userType";
 export const Sidebar = () => {
   const navigate = useNavigate();
   const user = useAuthUser<UserType>();
+
   return (
     <Box
       sx={{
@@ -28,20 +29,70 @@ export const Sidebar = () => {
         <Typography variant="body2" sx={{ marginBottom: "40px" }}>
           Email: {user?.email}
         </Typography>
-        <Button
-          variant="contained"
-          sx={{
-            width: "100%",
-            marginBottom: "20px",
-            backgroundColor: "#3F51B5",
-            "&:hover": {
-              backgroundColor: "#5C6BC0",
-            },
-          }}
-          onClick={() => navigate("create")}
-        >
-          Adicionar Simpósio
-        </Button>
+
+        {user?.type === "organizer" ? (
+          <Box>
+            <Button
+              variant="contained"
+              sx={{
+                width: "100%",
+                marginBottom: "10px",
+                backgroundColor: "#4CAF50",
+                "&:hover": {
+                  backgroundColor: "#66BB6A",
+                },
+              }}
+              onClick={() => navigate("/meus-simposios")}
+            >
+              Meus Simpósios
+            </Button>
+            <Button
+              variant="contained"
+              sx={{
+                width: "100%",
+                marginBottom: "10px",
+                backgroundColor: "#4CAF50",
+                "&:hover": {
+                  backgroundColor: "#66BB6A",
+                },
+              }}
+              onClick={() => navigate("/registros-pendentes")}
+            >
+              Registros Pendentes
+            </Button>
+          </Box>
+        ) : (
+          <Box>
+            <Button
+              variant="contained"
+              sx={{
+                width: "100%",
+                marginBottom: "10px",
+                backgroundColor: "#4CAF50",
+                "&:hover": {
+                  backgroundColor: "#66BB6A",
+                },
+              }}
+              onClick={() => navigate("/simposios-registrado")}
+            >
+              Simpósios Registrado
+            </Button>
+            <Button
+              variant="contained"
+              sx={{
+                width: "100%",
+                marginBottom: "10px",
+                backgroundColor: "#4CAF50",
+                "&:hover": {
+                  backgroundColor: "#66BB6A",
+                },
+              }}
+              onClick={() => navigate("/registros-pendentes")}
+            >
+              Registros Pendentes
+            </Button>
+          </Box>
+        )}
       </Box>
       <Button
         variant="outlined"

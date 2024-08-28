@@ -11,10 +11,13 @@ import {
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import { client } from "../config/client";
+import useAuthUser from "react-auth-kit/hooks/useAuthUser";
+import { UserType } from "../types/userType";
 
 export function SymposiumDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const user = useAuthUser<UserType>();
   const [symposium, setSymposium] = useState(null);
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +56,15 @@ export function SymposiumDetails() {
     );
   }
 
+  const isCertificateButtonVisible = () => {
+    const currentDate = new Date();
+    return (
+      user.type === "organizer" &&
+      symposium &&
+      new Date(symposium.endDate) < currentDate
+    );
+  };
+
   return (
     <Box
       sx={{
@@ -84,20 +96,6 @@ export function SymposiumDetails() {
           <Typography variant="body2" sx={{ marginBottom: "40px" }}>
             Email
           </Typography>
-          <Button
-            variant="contained"
-            sx={{
-              width: "100%",
-              marginBottom: "20px",
-              backgroundColor: "#3F51B5",
-              "&:hover": {
-                backgroundColor: "#5C6BC0",
-              },
-            }}
-            onClick={() => navigate("/create-event")}
-          >
-            Criar Evento
-          </Button>
         </Box>
         <Button
           variant="outlined"
@@ -119,6 +117,7 @@ export function SymposiumDetails() {
           padding: "30px",
           backgroundColor: "#1E1E1E",
           overflowY: "auto",
+          position: "relative",
         }}
       >
         {symposium ? (
@@ -144,7 +143,7 @@ export function SymposiumDetails() {
                     backgroundColor: "#5C6BC0",
                   },
                 }}
-                onClick={() => navigate(`create-event`)}
+                onClick={() => navigate(`create`)}
               >
                 Criar Evento
               </Button>
@@ -156,6 +155,7 @@ export function SymposiumDetails() {
                 padding: "20px",
                 backgroundColor: "#3C3C3C",
                 color: "#FFFFFF",
+                position: "relative",
               }}
             >
               <Typography variant="body1" sx={{ marginBottom: "10px" }}>
@@ -175,6 +175,27 @@ export function SymposiumDetails() {
               <Typography variant="body1" sx={{ marginBottom: "10px" }}>
                 <strong>Descrição:</strong> {symposium.description}
               </Typography>
+
+              {isCertificateButtonVisible() && (
+                <Button
+                  variant="contained"
+                  sx={{
+                    position: "absolute",
+                    bottom: "20px",
+                    right: "20px",
+                    backgroundColor: "#4CAF50",
+                    "&:hover": {
+                      backgroundColor: "#66BB6A",
+                    },
+                  }}
+                  onClick={() => {
+                    // Implement certificate issuance functionality here
+                    console.log("Emitir Certificados");
+                  }}
+                >
+                  Emitir Certificados
+                </Button>
+              )}
             </Card>
 
             <Typography
@@ -220,7 +241,9 @@ export function SymposiumDetails() {
                       <Button
                         variant="outlined"
                         color="primary"
-                        onClick={() => navigate(`/organizer/dash/events/${event.id}`)}
+                        onClick={() =>
+                          navigate(`/organizer/dash/events/${event.id}`)
+                        }
                         sx={{ color: "#FFFFFF", borderColor: "#616161" }}
                       >
                         Mais Detalhes

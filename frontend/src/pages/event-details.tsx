@@ -10,10 +10,13 @@ import {
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import { client } from "../config/client";
+import useAuthUser from "react-auth-kit/hooks/useAuthUser";
+import { UserType } from "../types/userType";
 
 export function EventDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const user = useAuthUser<UserType>();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -31,6 +34,15 @@ export function EventDetails() {
 
     fetchEventDetails();
   }, [id]);
+
+  const isCertificateButtonVisible = () => {
+    if (!event) return false;
+
+    const currentDateTime = new Date();
+    const eventEndDateTime = new Date(`${event.date}T${event.endTime}`);
+
+    return user.type === "organizer" && currentDateTime > eventEndDateTime;
+  };
 
   if (loading) {
     return (
@@ -115,6 +127,7 @@ export function EventDetails() {
           padding: "30px",
           backgroundColor: "#1E1E1E",
           overflowY: "auto",
+          position: "relative",
         }}
       >
         {event ? (
@@ -152,6 +165,7 @@ export function EventDetails() {
                 padding: "20px",
                 backgroundColor: "#3C3C3C",
                 color: "#FFFFFF",
+                position: "relative",
               }}
             >
               <Typography variant="body1" sx={{ marginBottom: "10px" }}>
@@ -164,7 +178,7 @@ export function EventDetails() {
               </Typography>
               <Typography variant="body1" sx={{ marginBottom: "10px" }}>
                 <strong>Horário de Término:</strong>{" "}
-                {new Date(`${event.date}T${event.endTime}`).toLocaleTimeString()}
+                {new Date(`${event.date} ${event.endTime}`).toLocaleTimeString()}
               </Typography>
               <Typography variant="body1" sx={{ marginBottom: "10px" }}>
                 <strong>Local:</strong> {event.location}
@@ -178,6 +192,27 @@ export function EventDetails() {
               <Typography variant="body1" sx={{ marginBottom: "10px" }}>
                 <strong>Descrição:</strong> {event.description}
               </Typography>
+
+              {isCertificateButtonVisible() && (
+                <Button
+                  variant="contained"
+                  sx={{
+                    position: "absolute",
+                    bottom: "20px",
+                    right: "20px",
+                    backgroundColor: "#4CAF50",
+                    "&:hover": {
+                      backgroundColor: "#66BB6A",
+                    },
+                  }}
+                  onClick={() => {
+                    // Implement certificate issuance functionality here
+                    console.log("Emitir Certificados");
+                  }}
+                >
+                  Emitir Certificados
+                </Button>
+              )}
             </Card>
 
             <Button

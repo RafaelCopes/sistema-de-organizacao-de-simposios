@@ -21,7 +21,7 @@ export const organizerRoutes: RouteObject[] = [
             element: <SymposiumDetails />,
           },
           {
-            path: "create-event",
+            path: "create",
             element: <CreateEvent />,
           },
         ],
