@@ -70,12 +70,12 @@ export function EventDetails() {
   const isCertificateButtonVisible = () => {
     const currentDate = new Date();
     return (
-      user.type === "organizer" && event && new Date(event.date) < currentDate
+      event && new Date(event.date) < currentDate
     );
   };
 
   const returnStatus = () => {
-    if (!isCertificateButtonVisible()) {
+    if (isCertificateButtonVisible()) {
       return "Evento Encerrado";
     }
 
@@ -92,7 +92,7 @@ export function EventDetails() {
   };
 
   const returnStatusColor = () => {
-    if (!isCertificateButtonVisible()) {
+    if (isCertificateButtonVisible()) {
       return "#AAA";
     }
     switch (registeredStatus) {
@@ -194,7 +194,26 @@ export function EventDetails() {
                 <strong>Descrição:</strong> {event.description}
               </Typography>
 
-              {isCertificateButtonVisible() && (
+              {!isCertificateButtonVisible() && user.type === 'organizer' && (<Button
+                variant="contained"
+                sx={{
+                  position: "absolute",
+                  top: "20px",
+                  right: "20px",
+                  backgroundColor: returnStatusColor(),
+                  "&:hover": {
+                    backgroundColor: "#66BB6A",
+                  },
+                }}
+                onClick={() => {
+                  navigate(`registrations`);
+                }}
+              >
+                Visualizar Solicitações
+              </Button>)
+              }
+
+              {isCertificateButtonVisible() && user.type === 'organizer' &&  (
                 <Button
                   variant="contained"
                   sx={{
@@ -235,7 +254,7 @@ export function EventDetails() {
                     returnStatus() === "Registrado" ||
                     returnStatus() === "Pendente" ||
                     returnStatus() === "Rejeitado" ||
-                    !isCertificateButtonVisible()
+                    isCertificateButtonVisible()
                   }
                 >
                   {returnStatus()}

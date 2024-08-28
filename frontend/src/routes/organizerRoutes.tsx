@@ -4,6 +4,8 @@ import { SymposiumDetails } from "../pages/symposium-details";
 import { CreateSymposium } from "../pages/create-symposium";
 import { CreateEvent } from "../pages/create-event";
 import { EventDetails } from "../pages/event-details";
+import { SymposiumRegistrations } from "../pages/symposiums-registrations";
+import { EventRegistrations } from "../pages/event-registrations";
 
 export const organizerRoutes: RouteObject[] = [
   {
@@ -26,7 +28,7 @@ export const organizerRoutes: RouteObject[] = [
           },
           {
             path: "registrations",
-            element: <div>Registrations</div>,
+            element: <SymposiumRegistrations />,
           },
         ],
       },
@@ -36,7 +38,16 @@ export const organizerRoutes: RouteObject[] = [
       },
       {
         path: "events/:id", // This is the event details route
-        element: <EventDetails />,
+        children: [
+          {
+            index: true,
+            element: <EventDetails />,
+          },
+          {
+            path: "registrations",
+            element: <EventRegistrations />,
+          }
+        ]
       },
     ],
   },

@@ -29,7 +29,7 @@ export const Sidebar = () => {
           {user?.name}
         </Typography>
         <Typography variant="body2" sx={{ marginBottom: "20px" }}>
-          Email: {user?.email}
+          {user?.email}
         </Typography>
         <Typography variant="body2" sx={{ marginBottom: "20px" }}>
           {user?.type === "organizer" ? "Organizador" : "Participante"}
@@ -37,34 +37,6 @@ export const Sidebar = () => {
 
         {user?.type === "organizer" ? (
           <Box>
-            <Button
-              variant="contained"
-              sx={{
-                width: "100%",
-                marginBottom: "10px",
-                backgroundColor: "#4CAF50",
-                "&:hover": {
-                  backgroundColor: "#66BB6A",
-                },
-              }}
-              onClick={() => navigate("/meus-simposios")}
-            >
-              Meus Simpósios
-            </Button>
-            <Button
-              variant="contained"
-              sx={{
-                width: "100%",
-                marginBottom: "10px",
-                backgroundColor: "#4CAF50",
-                "&:hover": {
-                  backgroundColor: "#66BB6A",
-                },
-              }}
-              onClick={() => navigate("/registros-pendentes")}
-            >
-              Registros Pendentes
-            </Button>
           </Box>
         ) : (
           <Box>

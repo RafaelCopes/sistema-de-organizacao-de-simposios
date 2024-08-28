@@ -99,14 +99,13 @@ export function SymposiumDetails() {
   const isCertificateButtonVisible = () => {
     const currentDate = new Date();
     return (
-      user.type === "organizer" &&
       symposium &&
       new Date(symposium.endDate) < currentDate
     );
   };
 
   const returnStatus = () => {
-    if (!isCertificateButtonVisible()) {
+    if (isCertificateButtonVisible()) {
       return "Evento Encerrado";
     }
 
@@ -123,7 +122,7 @@ export function SymposiumDetails() {
   };
 
   const returnStatusColor = () => {
-    if (!isCertificateButtonVisible()) {
+    if (isCertificateButtonVisible()) {
       return "#AAA";
     }
 
@@ -219,7 +218,7 @@ export function SymposiumDetails() {
                 <strong>Descrição:</strong> {symposium.description}
               </Typography>
 
-              {isCertificateButtonVisible() && (
+              {isCertificateButtonVisible() && user?.type === 'organizer' && (
                 <Button
                   variant="contained"
                   sx={{
@@ -240,7 +239,7 @@ export function SymposiumDetails() {
                 </Button>
               )}
 
-              <Button
+              {!isCertificateButtonVisible() && user.type === 'organizer' && (<Button
                 variant="contained"
                 sx={{
                   position: "absolute",
@@ -256,7 +255,8 @@ export function SymposiumDetails() {
                 }}
               >
                 Visualizar Solicitações
-              </Button>
+              </Button>)
+              }
 
               {user.type === "participant" && (
                 <Button
@@ -278,7 +278,7 @@ export function SymposiumDetails() {
                     returnStatus() == "Registrado" ||
                     returnStatus() == "Pendente" ||
                     returnStatus() == "Rejeitado" ||
-                    !isCertificateButtonVisible()
+                    isCertificateButtonVisible()
                   }
                 >
                   {returnStatus()}
