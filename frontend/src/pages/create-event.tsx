@@ -45,6 +45,8 @@ export function CreateEvent() {
   });
 
   const onSubmit = async (data) => {
+    console.log(data);
+
     try {
       await client.post(
         "/events",
@@ -144,10 +146,10 @@ export function CreateEvent() {
           <TextField
             select
             label="Nível"
+            defaultValue={'beginner'}
             variant="outlined"
             fullWidth
             {...register("level")}
-            error={!!errors.level}
           >
             {levelType.map((option) => (
               <MenuItem key={option.value} value={option.value}>

@@ -33,7 +33,6 @@ export function SymposiumDetails() {
 
         console.log(symposiumResponse.data);
 
-        console.log("chegou aqui");
         // Check if the user is registered for this symposium and status is accepted
         if (user.type === "participant") {
           const registration = symposiumResponse.data.registrations.find(
@@ -41,10 +40,13 @@ export function SymposiumDetails() {
               return participant.user.email === user.email;
             }
           );
+          console.log("chegou aqui");
 
           console.log("registration", registration);
 
-          setregisteredStatus(registration.status);
+          if (registration) {
+            setregisteredStatus(registration.status);
+          }
         }
 
         const eventsResponse = await client.get(`/symposiums/${id}/events`);
@@ -166,7 +168,7 @@ export function SymposiumDetails() {
               >
                 {symposium.name}
               </Typography>
-              {user.type === "organizer" && (
+              {user.type === "organizer" && !isCertificateButtonVisible() && (
                 <Button
                   variant="contained"
                   sx={{

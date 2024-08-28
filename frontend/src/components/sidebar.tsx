@@ -105,7 +105,7 @@ export const Sidebar = () => {
         sx={{ color: "#FFFFFF", borderColor: "#616161" }}
         onClick={() => {
           signOut();
-          navigate("/");
+          navigate("/login");
         }}
       >
         Deslogar

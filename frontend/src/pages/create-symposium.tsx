@@ -32,7 +32,7 @@ export function CreateSymposium() {
     try {
       await client.post('/symposiums', data, {headers: {Authorization: `Bearer ${user.token}`}});
 
-      navigate('/');
+      navigate('/organizer/dash');
     } catch (error) {
       console.error('Error creating symposium:', error);
     }

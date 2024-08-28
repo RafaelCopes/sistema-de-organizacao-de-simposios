@@ -20,12 +20,25 @@ export function EventDetails() {
   const user = useAuthUser<UserType>();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [registeredStatus, setRegisteredStatus] = useState<string>("");
+  const [isRegistering, setIsRegistering] = useState(false);
 
   useEffect(() => {
     const fetchEventDetails = async () => {
       try {
         const response = await client.get(`/events/${id}`);
         setEvent(response.data);
+
+        // Check if the user is registered for this event
+        if (user.type === "participant") {
+          const registration = response.data.registrations.find(
+            (registration) => registration.user.email === user.email
+          );
+
+          if (registration) {
+            setRegisteredStatus(registration.status);
+          }
+        }
       } catch (error) {
         console.error("Error fetching event details:", error);
       } finally {
@@ -34,15 +47,55 @@ export function EventDetails() {
     };
 
     fetchEventDetails();
-  }, [id]);
+  }, [id, user]);
+
+  const handleRegisterClick = async () => {
+    setIsRegistering(true);
+    try {
+      await client.post(
+        `/events/${id}/registration`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${user.token}` },
+        }
+      );
+      setRegisteredStatus("pending");
+    } catch (error) {
+      console.error("Error registering for the event:", error);
+    } finally {
+      setIsRegistering(false);
+    }
+  };
 
   const isCertificateButtonVisible = () => {
-    if (!event) return false;
+    const currentDate = new Date();
+    return user.type === "organizer" && event && new Date(event.date) < currentDate;
+  };
 
-    const currentDateTime = new Date();
-    const eventEndDateTime = new Date(`${event.date}T${event.endTime}`);
+  const returnStatus = () => {
+    switch (registeredStatus) {
+      case "accepted":
+        return "Registrado";
+      case "pending":
+        return "Pendente";
+      case "rejected":
+        return "Rejeitado";
+      default:
+        return "Registrar";
+    }
+  };
 
-    return user.type === "organizer" && currentDateTime > eventEndDateTime;
+  const returnStatusColor = () => {
+    switch (registeredStatus) {
+      case "accepted":
+        return "#3F51B5";
+      case "pending":
+        return "#FFC107";
+      case "rejected":
+        return "#F44336";
+      default:
+        return "#4CAF50";
+    }
   };
 
   if (loading) {
@@ -98,18 +151,6 @@ export function EventDetails() {
               >
                 {event.name}
               </Typography>
-              <Button
-                variant="contained"
-                sx={{
-                  backgroundColor: "#3F51B5",
-                  "&:hover": {
-                    backgroundColor: "#5C6BC0",
-                  },
-                }}
-                onClick={() => navigate(`/events/edit/${id}`)}
-              >
-                Editar Evento
-              </Button>
             </Box>
 
             <Card
@@ -122,8 +163,7 @@ export function EventDetails() {
               }}
             >
               <Typography variant="body1" sx={{ marginBottom: "10px" }}>
-                <strong>Data:</strong>{" "}
-                {new Date(event.date).toLocaleDateString()}
+                <strong>Data:</strong> {new Date(event.date).toLocaleDateString()}
               </Typography>
               <Typography variant="body1" sx={{ marginBottom: "10px" }}>
                 <strong>Horário de Início:</strong> {event.startTime}
@@ -162,6 +202,32 @@ export function EventDetails() {
                   }}
                 >
                   Emitir Certificados
+                </Button>
+              )}
+
+              {user.type === "participant" && (
+                <Button
+                  variant="contained"
+                  sx={{
+                    position: "absolute",
+                    bottom: "20px",
+                    right: "20px",
+                    "&:hover": {
+                      backgroundColor: "#66BB6A",
+                    },
+                    "&:disabled": {
+                      backgroundColor: returnStatusColor(),
+                      color: "#000000",
+                    },
+                  }}
+                  onClick={handleRegisterClick}
+                  disabled={
+                    returnStatus() === "Registrado" ||
+                    returnStatus() === "Pendente" ||
+                    returnStatus() === "Rejeitado"
+                  }
+                >
+                  {returnStatus()}
                 </Button>
               )}
             </Card>
